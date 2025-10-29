@@ -26,13 +26,52 @@ export const chemistsData = [
 ];
 
 export const samplersData = [
-  { name: 'Cesar' },
-  { name: 'Ruben' },
-  { name: 'Laura' },
-  { name: 'Sakik' },
-  { name: 'Edwind' },
-  { name: 'Ash' },
-  { name: 'Jay-cen' },
+  {
+    name: 'Cesar',
+    email: 'cesar@amspec.com',
+    phone: '+61 400 123 456',
+    has24HourRestriction: true,
+    restrictedDays: [0, 6], // No work on Sunday and Saturday
+  },
+  {
+    name: 'Ruben',
+    email: 'ruben@amspec.com',
+    phone: '+61 400 234 567',
+    has24HourRestriction: false,
+    restrictedDays: [0], // No work on Sunday
+  },
+  {
+    name: 'Laura',
+    email: 'laura@amspec.com',
+    phone: '+61 400 345 678',
+    has24HourRestriction: true,
+    restrictedDays: [],
+  },
+  {
+    name: 'Sakik',
+    email: 'sakik@amspec.com',
+    has24HourRestriction: false,
+    restrictedDays: [5, 6], // No work on Friday and Saturday
+  },
+  {
+    name: 'Edwind',
+    phone: '+61 400 456 789',
+    has24HourRestriction: true,
+    restrictedDays: [0],
+  },
+  {
+    name: 'Ash',
+    email: 'ash@amspec.com',
+    phone: '+61 400 567 890',
+    has24HourRestriction: false,
+    restrictedDays: [],
+  },
+  {
+    name: 'Jay-cen',
+    email: 'jaycen@amspec.com',
+    has24HourRestriction: true,
+    restrictedDays: [1, 2], // No work on Monday and Tuesday
+  },
 ];
 
 export const surveyorsData = [
