@@ -356,13 +356,21 @@
     </div>
   </form>
 
-  <!-- Manage Dropdown Modal -->
+  <!-- Manage Dropdown Modal (for non-Sampler dropdowns) -->
   <ManageDropdownModal
+    v-if="manageModal.type !== 'samplers'"
     :is-open="manageModal.isOpen"
     :type="manageModal.type"
     :title="manageModal.title"
     :singular-title="manageModal.singularTitle"
     @close="closeManageModal"
+    @updated="handleDropdownUpdated"
+  />
+
+  <!-- Manage Sampler Modal (special modal for samplers) -->
+  <ManageSamplerModal
+    :is-open="manageSamplerModal"
+    @close="closeSamplerModal"
     @updated="handleDropdownUpdated"
   />
 </template>
@@ -376,6 +384,7 @@ import 'flatpickr/dist/flatpickr.css'
 import { createShipNomination, type ShipNominationData } from '@/services/shipNominationService'
 import dropdownService from '@/services/dropdownService'
 import ManageDropdownModal from './ManageDropdownModal.vue'
+import ManageSamplerModal from './ManageSamplerModal.vue'
 
 // Form data
 const formData = ref({
@@ -552,8 +561,18 @@ const manageModal = ref({
   singularTitle: '',
 })
 
+// Sampler modal state
+const manageSamplerModal = ref(false)
+
 // Open manage modal
 const openManageModal = (type: string, title: string, singularTitle: string) => {
+  // Use special modal for samplers
+  if (type === 'samplers') {
+    manageSamplerModal.value = true
+    return
+  }
+
+  // Use generic modal for other dropdowns
   manageModal.value = {
     isOpen: true,
     type,
@@ -565,6 +584,11 @@ const openManageModal = (type: string, title: string, singularTitle: string) => 
 // Close manage modal
 const closeManageModal = () => {
   manageModal.value.isOpen = false
+}
+
+// Close sampler modal
+const closeSamplerModal = () => {
+  manageSamplerModal.value = false
 }
 
 // Handle dropdown updated (reload dropdown data)
