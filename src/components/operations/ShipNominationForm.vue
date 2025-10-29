@@ -76,9 +76,18 @@
 
       <!-- Agent - Select -->
       <div>
-        <label for="agent" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-          Agent
-        </label>
+        <div class="flex items-center justify-between mb-2">
+          <label for="agent" class="block text-sm font-medium text-gray-900 dark:text-white">
+            Agent
+          </label>
+          <button
+            type="button"
+            @click="openManageModal('agents', 'Agents', 'Agent')"
+            class="text-xs text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 font-medium"
+          >
+            Manage
+          </button>
+        </div>
         <select
           id="agent"
           v-model="formData.agent"
@@ -204,9 +213,18 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <!-- Terminal - Select -->
       <div>
-        <label for="terminal" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-          Terminal
-        </label>
+        <div class="flex items-center justify-between mb-2">
+          <label for="terminal" class="block text-sm font-medium text-gray-900 dark:text-white">
+            Terminal
+          </label>
+          <button
+            type="button"
+            @click="openManageModal('terminals', 'Terminals', 'Terminal')"
+            class="text-xs text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 font-medium"
+          >
+            Manage
+          </button>
+        </div>
         <select
           id="terminal"
           v-model="formData.terminal"
@@ -221,9 +239,18 @@
 
       <!-- Berth - Select -->
       <div>
-        <label for="berth" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-          Berth
-        </label>
+        <div class="flex items-center justify-between mb-2">
+          <label for="berth" class="block text-sm font-medium text-gray-900 dark:text-white">
+            Berth
+          </label>
+          <button
+            type="button"
+            @click="openManageModal('berths', 'Berths', 'Berth')"
+            class="text-xs text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 font-medium"
+          >
+            Manage
+          </button>
+        </div>
         <select
           id="berth"
           v-model="formData.berth"
@@ -238,9 +265,18 @@
 
       <!-- Surveyor - Select -->
       <div>
-        <label for="surveyor" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-          Surveyor
-        </label>
+        <div class="flex items-center justify-between mb-2">
+          <label for="surveyor" class="block text-sm font-medium text-gray-900 dark:text-white">
+            Surveyor
+          </label>
+          <button
+            type="button"
+            @click="openManageModal('surveyors', 'Surveyors', 'Surveyor')"
+            class="text-xs text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 font-medium"
+          >
+            Manage
+          </button>
+        </div>
         <select
           id="surveyor"
           v-model="formData.surveyor"
@@ -258,9 +294,18 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <!-- Sampler - Select -->
       <div>
-        <label for="sampler" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-          Sampler
-        </label>
+        <div class="flex items-center justify-between mb-2">
+          <label for="sampler" class="block text-sm font-medium text-gray-900 dark:text-white">
+            Sampler
+          </label>
+          <button
+            type="button"
+            @click="openManageModal('samplers', 'Samplers', 'Sampler')"
+            class="text-xs text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 font-medium"
+          >
+            Manage
+          </button>
+        </div>
         <select
           id="sampler"
           v-model="formData.sampler"
@@ -275,9 +320,18 @@
 
       <!-- Chemist - Select -->
       <div>
-        <label for="chemist" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-          Chemist
-        </label>
+        <div class="flex items-center justify-between mb-2">
+          <label for="chemist" class="block text-sm font-medium text-gray-900 dark:text-white">
+            Chemist
+          </label>
+          <button
+            type="button"
+            @click="openManageModal('chemists', 'Chemists', 'Chemist')"
+            class="text-xs text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 font-medium"
+          >
+            Manage
+          </button>
+        </div>
         <select
           id="chemist"
           v-model="formData.chemist"
@@ -301,15 +355,27 @@
       </Button>
     </div>
   </form>
+
+  <!-- Manage Dropdown Modal -->
+  <ManageDropdownModal
+    :is-open="manageModal.isOpen"
+    :type="manageModal.type"
+    :title="manageModal.title"
+    :singular-title="manageModal.singularTitle"
+    @close="closeManageModal"
+    @updated="handleDropdownUpdated"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import MultipleSelect from '@/components/forms/FormElements/MultipleSelect.vue'
 import Button from '@/components/ui/Button.vue'
 import flatPickr from 'vue-flatpickr-component'
 import 'flatpickr/dist/flatpickr.css'
 import { createShipNomination, type ShipNominationData } from '@/services/shipNominationService'
+import dropdownService from '@/services/dropdownService'
+import ManageDropdownModal from './ManageDropdownModal.vue'
 
 // Form data
 const formData = ref({
@@ -329,7 +395,7 @@ const formData = ref({
   chemist: '',
 })
 
-// Temporary placeholder options (will be replaced with MongoDB data)
+// Dropdown options loaded from MongoDB
 const clientOptions = ref<string[]>([])
 const productTypeOptions = ref<string[]>([])
 const agentOptions = ref<string[]>([])
@@ -338,6 +404,54 @@ const berthOptions = ref<string[]>([])
 const surveyorOptions = ref<string[]>([])
 const samplerOptions = ref<string[]>([])
 const chemistOptions = ref<string[]>([])
+
+// Load dropdown data from MongoDB
+const loadDropdownData = async () => {
+  try {
+    // Load agents
+    const agentsResponse = await dropdownService.getAgents()
+    if (agentsResponse.success && agentsResponse.data) {
+      agentOptions.value = agentsResponse.data.map((item) => item.name)
+    }
+
+    // Load berths
+    const berthsResponse = await dropdownService.getBerths()
+    if (berthsResponse.success && berthsResponse.data) {
+      berthOptions.value = berthsResponse.data.map((item) => item.name)
+    }
+
+    // Load chemists
+    const chemistsResponse = await dropdownService.getChemists()
+    if (chemistsResponse.success && chemistsResponse.data) {
+      chemistOptions.value = chemistsResponse.data.map((item) => item.name)
+    }
+
+    // Load samplers
+    const samplersResponse = await dropdownService.getSamplers()
+    if (samplersResponse.success && samplersResponse.data) {
+      samplerOptions.value = samplersResponse.data.map((item) => item.name)
+    }
+
+    // Load surveyors
+    const surveyorsResponse = await dropdownService.getSurveyors()
+    if (surveyorsResponse.success && surveyorsResponse.data) {
+      surveyorOptions.value = surveyorsResponse.data.map((item) => item.name)
+    }
+
+    // Load terminals
+    const terminalsResponse = await dropdownService.getTerminals()
+    if (terminalsResponse.success && terminalsResponse.data) {
+      terminalOptions.value = terminalsResponse.data.map((item) => item.name)
+    }
+  } catch (error) {
+    console.error('Error loading dropdown data:', error)
+  }
+}
+
+// Load dropdown data on component mount
+onMounted(() => {
+  loadDropdownData()
+})
 
 // Flatpickr configuration for date + time
 const dateTimeConfig = {
@@ -428,5 +542,33 @@ const handleReset = () => {
     sampler: '',
     chemist: '',
   }
+}
+
+// Manage modal state
+const manageModal = ref({
+  isOpen: false,
+  type: '',
+  title: '',
+  singularTitle: '',
+})
+
+// Open manage modal
+const openManageModal = (type: string, title: string, singularTitle: string) => {
+  manageModal.value = {
+    isOpen: true,
+    type,
+    title,
+    singularTitle,
+  }
+}
+
+// Close manage modal
+const closeManageModal = () => {
+  manageModal.value.isOpen = false
+}
+
+// Handle dropdown updated (reload dropdown data)
+const handleDropdownUpdated = () => {
+  loadDropdownData()
 }
 </script>

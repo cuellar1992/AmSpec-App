@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import connectDB from './config/database.js';
 import shipNominationRoutes from './routes/shipNominations.js';
+import dropdownRoutes from './routes/dropdowns.js';
 
 // Load environment variables
 dotenv.config();
@@ -25,11 +26,18 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: {
       shipNominations: '/api/ship-nominations',
+      agents: '/api/dropdowns/agents',
+      berths: '/api/dropdowns/berths',
+      chemists: '/api/dropdowns/chemists',
+      samplers: '/api/dropdowns/samplers',
+      surveyors: '/api/dropdowns/surveyors',
+      terminals: '/api/dropdowns/terminals',
     },
   });
 });
 
 app.use('/api/ship-nominations', shipNominationRoutes);
+app.use('/api/dropdowns', dropdownRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
