@@ -134,7 +134,7 @@
                   @click="handleToggleActive(item._id, item.isActive)"
                   :disabled="isDeletingId === item._id"
                   class="rounded p-2 hover:bg-gray-100 dark:hover:bg-gray-600"
-                  :class="item.isActive ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'"
+                  :class="item.isActive ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'"
                   :title="item.isActive ? 'Deactivate' : 'Activate'"
                 >
                   <svg
@@ -163,7 +163,7 @@
                       stroke-linecap="round"
                       stroke-linejoin="round"
                       stroke-width="2"
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
                     />
                     <path
                       v-else
@@ -171,6 +171,43 @@
                       stroke-linejoin="round"
                       stroke-width="2"
                       d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </button>
+
+                <button
+                  v-if="editingId !== item._id"
+                  @click="handlePermanentDelete(item._id, item.name)"
+                  :disabled="isPermanentDeletingId === item._id"
+                  class="rounded p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                  title="Delete Permanently"
+                >
+                  <svg
+                    v-if="isPermanentDeletingId === item._id"
+                    class="h-4 w-4 animate-spin"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    ></circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                     />
                   </svg>
                 </button>
@@ -222,6 +259,7 @@ const editingId = ref<string | null>(null)
 const editingName = ref('')
 const isUpdating = ref(false)
 const isDeletingId = ref<string | null>(null)
+const isPermanentDeletingId = ref<string | null>(null)
 
 // Load items when modal opens
 watch(
@@ -324,6 +362,40 @@ const handleToggleActive = async (id: string, currentStatus: boolean) => {
     alert('Failed to update status')
   } finally {
     isDeletingId.value = null
+  }
+}
+
+// Permanent delete (hard delete)
+const handlePermanentDelete = async (id: string, name: string) => {
+  // Show confirmation dialog
+  const confirmed = confirm(
+    `⚠️ WARNING: This will PERMANENTLY delete "${name}" from the database.\n\nThis action CANNOT be undone!\n\nAre you sure you want to continue?`
+  )
+
+  if (!confirmed) return
+
+  // Second confirmation for extra safety
+  const doubleConfirmed = confirm(
+    `⚠️ FINAL CONFIRMATION\n\nYou are about to permanently delete "${name}".\n\nType-based confirmation: Are you absolutely sure?`
+  )
+
+  if (!doubleConfirmed) return
+
+  isPermanentDeletingId.value = id
+  try {
+    const response = await dropdownService.permanentDelete(props.type, id)
+    if (response.success) {
+      await loadItems()
+      emit('updated')
+      alert(`✅ "${name}" has been permanently deleted from the database.`)
+    } else {
+      alert(`❌ Error: ${response.message}`)
+    }
+  } catch (error) {
+    console.error('Error permanently deleting item:', error)
+    alert('❌ Failed to permanently delete item')
+  } finally {
+    isPermanentDeletingId.value = null
   }
 }
 
