@@ -47,6 +47,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/ship-nomination',
+      name: 'Ship Nomination',
+      component: () => import('../views/Operations/ShipNomination.vue'),
+      meta: {
+        title: 'Ship Nomination',
+      },
+    },
+    {
       path: '/line-chart',
       name: 'Line Chart',
       component: () => import('../views/Chart/LineChart/LineChart.vue'),

@@ -29,3 +29,7 @@ coverage
 
 *.tsbuildinfo
 .vercel
+
+# Environment variables
+.env
+server/.env

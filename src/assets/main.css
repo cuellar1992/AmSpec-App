@@ -758,3 +758,82 @@ span.flatpickr-weekday,
 .edit-button {
   @apply flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto;
 }
+
+/* Flatpickr Dark Mode Styles */
+.dark .flatpickr-calendar {
+  @apply bg-gray-800 border-gray-700 shadow-xl;
+}
+
+.dark .flatpickr-months {
+  @apply bg-gray-800;
+}
+
+.dark .flatpickr-current-month .flatpickr-monthDropdown-months,
+.dark .flatpickr-current-month .numInputWrapper input {
+  @apply bg-gray-800 text-white;
+}
+
+.dark .flatpickr-weekdays {
+  @apply bg-gray-800;
+}
+
+.dark .flatpickr-weekday {
+  @apply text-gray-400;
+}
+
+.dark .flatpickr-day {
+  @apply text-gray-300 hover:bg-gray-700 hover:border-gray-700;
+}
+
+.dark .flatpickr-day.today {
+  @apply border-brand-500 text-brand-500;
+}
+
+.dark .flatpickr-day.selected {
+  @apply bg-brand-500 border-brand-500 text-white hover:bg-brand-600 hover:border-brand-600;
+}
+
+.dark .flatpickr-day.inRange {
+  @apply bg-gray-700 border-gray-700;
+}
+
+.dark .flatpickr-time {
+  @apply bg-gray-800 border-t-gray-700;
+}
+
+.dark .flatpickr-time input {
+  background-color: rgb(55 65 81) !important;
+  color: white !important;
+}
+
+.dark .flatpickr-time input:hover,
+.dark .flatpickr-time input:focus {
+  background-color: rgb(75 85 99) !important;
+}
+
+.dark .flatpickr-time .flatpickr-time-separator,
+.dark .flatpickr-time .flatpickr-am-pm {
+  @apply text-gray-300;
+}
+
+.dark .flatpickr-time .numInputWrapper span.arrowUp:after {
+  border-bottom-color: rgb(209 213 219);
+}
+
+.dark .flatpickr-time .numInputWrapper span.arrowDown:after {
+  border-top-color: rgb(209 213 219);
+}
+
+.dark .flatpickr-months .flatpickr-month {
+  @apply text-white;
+}
+
+.dark .flatpickr-months .flatpickr-prev-month:hover svg,
+.dark .flatpickr-months .flatpickr-next-month:hover svg {
+  @apply fill-gray-300;
+}
+
+.dark .flatpickr-months .flatpickr-prev-month svg,
+.dark .flatpickr-months .flatpickr-next-month svg {
+  @apply fill-gray-400;
+}
