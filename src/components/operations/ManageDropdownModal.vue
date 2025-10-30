@@ -277,6 +277,18 @@
       </div>
     </Dialog>
   </TransitionRoot>
+
+  <!-- Confirmation Modal -->
+  <ConfirmationModal
+    :isOpen="showConfirmModal"
+    :title="confirmModalTitle"
+    :message="confirmModalMessage"
+    variant="danger"
+    confirmText="Yes, delete"
+    @confirm="executePermanentDelete"
+    @close="showConfirmModal = false"
+  />
+
 </template>
 
 <script setup lang="ts">
@@ -289,6 +301,8 @@ import {
   TransitionChild,
 } from '@headlessui/vue'
 import dropdownService, { type DropdownItem } from '@/services/dropdownService'
+import ConfirmationModal from '@/components/ui/ConfirmationModal.vue'
+import { useToast } from 'vue-toastification'
 
 interface Props {
   isOpen: boolean
@@ -304,6 +318,9 @@ const emit = defineEmits<{
   updated: []
 }>()
 
+// Initialize toast
+const toast = useToast()
+
 // Component state
 const items = ref<DropdownItem[]>([])
 const isLoading = ref(false)
@@ -314,6 +331,12 @@ const editingName = ref('')
 const isUpdating = ref(false)
 const isDeletingId = ref<string | null>(null)
 const isPermanentDeletingId = ref<string | null>(null)
+
+// Confirmation modal state
+const showConfirmModal = ref(false)
+const confirmModalTitle = ref('')
+const confirmModalMessage = ref('')
+const pendingDeleteData = ref<{ id: string; name: string } | null>(null)
 
 // Load items when modal opens
 watch(
@@ -340,6 +363,19 @@ const loadItems = async () => {
   }
 }
 
+// Show toast notifications using vue-toastification
+const showSuccessToast = (title: string, message: string) => {
+  toast.success(`${title}: ${message}`)
+}
+
+const showErrorToast = (title: string, message: string) => {
+  toast.error(`${title}: ${message}`)
+}
+
+const showWarningToast = (title: string, message: string) => {
+  toast.warning(`${title}: ${message}`)
+}
+
 // Add new item
 const handleAdd = async () => {
   if (!newItemName.value.trim()) return
@@ -351,12 +387,13 @@ const handleAdd = async () => {
       newItemName.value = ''
       await loadItems()
       emit('updated')
+      showSuccessToast('Success', 'Item added successfully')
     } else {
-      alert(`Error: ${response.message}`)
+      showErrorToast('Error', response.message || 'Error adding item')
     }
   } catch (error) {
     console.error('Error adding item:', error)
-    alert('Failed to add item')
+    showErrorToast('Error', 'Failed to add item')
   } finally {
     isAdding.value = false
   }
@@ -387,12 +424,13 @@ const handleUpdate = async (id: string) => {
       cancelEdit()
       await loadItems()
       emit('updated')
+      showSuccessToast('Success', 'Item updated successfully')
     } else {
-      alert(`Error: ${response.message}`)
+      showErrorToast('Error', response.message || 'Error updating item')
     }
   } catch (error) {
     console.error('Error updating item:', error)
-    alert('Failed to update item')
+    showErrorToast('Error', 'Failed to update item')
   } finally {
     isUpdating.value = false
   }
@@ -408,12 +446,14 @@ const handleToggleActive = async (id: string, currentStatus: boolean) => {
     if (response.success) {
       await loadItems()
       emit('updated')
+      const action = currentStatus ? 'deactivated' : 'activated'
+      showSuccessToast('Success', `Item ${action} successfully`)
     } else {
-      alert(`Error: ${response.message}`)
+      showErrorToast('Error', response.message || 'Error updating status')
     }
   } catch (error) {
     console.error('Error toggling status:', error)
-    alert('Failed to update status')
+    showErrorToast('Error', 'Failed to update status')
   } finally {
     isDeletingId.value = null
   }
@@ -421,35 +461,37 @@ const handleToggleActive = async (id: string, currentStatus: boolean) => {
 
 // Permanent delete (hard delete)
 const handlePermanentDelete = async (id: string, name: string) => {
-  // Show confirmation dialog
-  const confirmed = confirm(
-    `⚠️ WARNING: This will PERMANENTLY delete "${name}" from the database.\n\nThis action CANNOT be undone!\n\nAre you sure you want to continue?`
-  )
+  // Store pending delete data
+  pendingDeleteData.value = { id, name }
+  
+  // Show confirmation modal
+  confirmModalTitle.value = 'Permanent Delete'
+  confirmModalMessage.value = `Are you sure you want to permanently delete "${name}"?\n\nThis action cannot be undone and will remove the item from the database.`
+  showConfirmModal.value = true
+}
 
-  if (!confirmed) return
+// Execute the permanent delete after confirmation
+const executePermanentDelete = async () => {
+  if (!pendingDeleteData.value) return
 
-  // Second confirmation for extra safety
-  const doubleConfirmed = confirm(
-    `⚠️ FINAL CONFIRMATION\n\nYou are about to permanently delete "${name}".\n\nType-based confirmation: Are you absolutely sure?`
-  )
-
-  if (!doubleConfirmed) return
-
+  const { id, name } = pendingDeleteData.value
   isPermanentDeletingId.value = id
+
   try {
     const response = await dropdownService.permanentDelete(props.type, id)
     if (response.success) {
       await loadItems()
       emit('updated')
-      alert(`✅ "${name}" has been permanently deleted from the database.`)
+      showSuccessToast('Deleted', `"${name}" has been permanently deleted from the database`)
     } else {
-      alert(`❌ Error: ${response.message}`)
+      showErrorToast('Error', response.message || 'Error deleting item')
     }
   } catch (error) {
     console.error('Error permanently deleting item:', error)
-    alert('❌ Failed to permanently delete item')
+    showErrorToast('Error', 'Failed to permanently delete item')
   } finally {
     isPermanentDeletingId.value = null
+    pendingDeleteData.value = null
   }
 }
 

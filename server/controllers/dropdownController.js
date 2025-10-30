@@ -94,11 +94,27 @@ export const createDropdownController = (Model, modelName) => {
     // Update item
     update: async (req, res) => {
       try {
-        const { name, isActive } = req.body;
+        const { name, isActive, email, phone, has24HourRestriction, restrictedDays } = req.body;
 
         const updateData = {};
+        
+        // Common fields for all dropdowns
         if (name !== undefined) updateData.name = name.trim();
         if (isActive !== undefined) updateData.isActive = isActive;
+        
+        // Additional fields for Sampler model
+        if (email !== undefined) {
+          updateData.email = email === '' || email === null ? undefined : email.trim().toLowerCase();
+        }
+        if (phone !== undefined) {
+          updateData.phone = phone === '' || phone === null ? undefined : phone.trim();
+        }
+        if (has24HourRestriction !== undefined) {
+          updateData.has24HourRestriction = has24HourRestriction;
+        }
+        if (restrictedDays !== undefined) {
+          updateData.restrictedDays = Array.isArray(restrictedDays) ? restrictedDays : [];
+        }
 
         // If updating name, check for duplicates
         if (name) {

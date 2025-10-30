@@ -7,6 +7,8 @@ import Chemist from '../models/Chemist.js';
 import Sampler from '../models/Sampler.js';
 import Surveyor from '../models/Surveyor.js';
 import Terminal from '../models/Terminal.js';
+import Client from '../models/Client.js';
+import ProductType from '../models/ProductType.js';
 import {
   agentsData,
   berthsData,
@@ -14,6 +16,8 @@ import {
   samplersData,
   surveyorsData,
   terminalsData,
+  clientsData,
+  productTypesData,
 } from './seedData.js';
 
 dotenv.config();
@@ -32,6 +36,8 @@ const seedDatabase = async () => {
     await Sampler.deleteMany({});
     await Surveyor.deleteMany({});
     await Terminal.deleteMany({});
+    await Client.deleteMany({});
+    await ProductType.deleteMany({});
     console.log('✅ Existing data cleared\n');
 
     // Seed Agents
@@ -63,6 +69,16 @@ const seedDatabase = async () => {
     console.log('🏭 Seeding Terminals...');
     await Terminal.insertMany(terminalsData);
     console.log(`✅ ${terminalsData.length} terminals created`);
+
+    // Seed Clients
+    console.log('🏢 Seeding Clients...');
+    await Client.insertMany(clientsData);
+    console.log(`✅ ${clientsData.length} clients created`);
+
+    // Seed Product Types
+    console.log('🛢️ Seeding Product Types...');
+    await ProductType.insertMany(productTypesData);
+    console.log(`✅ ${productTypesData.length} product types created`);
 
     console.log('\n✅ Database seeding completed successfully!\n');
     process.exit(0);

@@ -239,6 +239,9 @@ const flatpickrConfig = {
   altInput: true,
   altFormat: 'F j, Y',
   wrap: true,
+  locale: {
+    firstDayOfWeek: 1, // Start week on Monday (0 = Sunday, 1 = Monday)
+  },
 }
 
 const flatpickrTimeConfig = {

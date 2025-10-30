@@ -1,6 +1,6 @@
 <template>
   <TransitionRoot :show="isOpen" as="template">
-    <Dialog as="div" class="relative z-50" @close="handleClose">
+    <Dialog as="div" class="relative z-[100000]" @close="handleClose">
       <!-- Backdrop -->
       <TransitionChild
         as="template"
@@ -16,7 +16,7 @@
 
       <!-- Modal Container -->
       <div class="fixed inset-0 overflow-y-auto">
-        <div class="flex min-h-full items-center justify-center p-4">
+        <div class="flex min-h-full items-start justify-center pt-8 pb-8 px-4">
           <TransitionChild
             as="template"
             enter="ease-out duration-300"
@@ -27,7 +27,7 @@
             leave-to="opacity-0 scale-95"
           >
             <DialogPanel
-              class="w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-2xl transform transition-all"
+              class="w-full max-w-4xl max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col rounded-xl bg-white dark:bg-gray-800 shadow-2xl transform transition-all"
             >
               <!-- Modal Header -->
               <div
@@ -99,7 +99,7 @@
                           class="sr-only peer"
                         />
                         <div
-                          class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 dark:peer-focus:ring-brand-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-brand-600"
+                          class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 dark:peer-focus:ring-brand-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-brand-600 dark:peer-checked:bg-brand-600"
                         ></div>
                         <span class="ms-3 text-sm font-medium text-gray-900 dark:text-white">
                           24-Hour Restriction
@@ -119,14 +119,14 @@
                         :key="index"
                         class="flex items-center px-4 py-2 rounded-lg border cursor-pointer transition-all duration-200"
                         :class="
-                          newSampler.restrictedDays.includes(index)
+                          isDayRestricted(newSampler.restrictedDays, index)
                             ? 'bg-red-500 border-red-500 text-white'
                             : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                         "
                       >
                         <input
                           type="checkbox"
-                          :checked="newSampler.restrictedDays.includes(index)"
+                          :checked="isDayRestricted(newSampler.restrictedDays, index)"
                           @change="toggleRestrictedDay(newSampler.restrictedDays, index)"
                           class="sr-only"
                         />
@@ -164,7 +164,7 @@
               </div>
 
               <!-- Samplers List -->
-              <div class="max-h-[500px] overflow-y-auto px-6 py-4">
+              <div class="max-h-[500px] overflow-y-auto px-6 py-4 pb-6 flex-1">
                 <div v-if="isLoading" class="text-center py-12">
                   <div
                     class="inline-block h-10 w-10 animate-spin rounded-full border-4 border-solid border-brand-500 border-r-transparent"
@@ -194,9 +194,10 @@
 
                 <TransitionGroup v-else name="list" tag="div" class="space-y-3">
                   <div
-                    v-for="sampler in samplers"
+                    v-for="(sampler, index) in samplers"
                     :key="sampler._id"
                     class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-all duration-200 hover:shadow-md"
+                    :style="index === samplers.length - 1 ? 'margin-bottom: 1rem;' : ''"
                   >
                     <!-- Editing Mode -->
                     <div v-if="editingId === sampler._id" class="space-y-4">
@@ -239,7 +240,7 @@
                               class="sr-only peer"
                             />
                             <div
-                              class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 dark:peer-focus:ring-brand-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-brand-600"
+                              class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 dark:peer-focus:ring-brand-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-brand-600 dark:peer-checked:bg-brand-600"
                             ></div>
                             <span class="ms-3 text-sm font-medium text-gray-900 dark:text-white">
                               24-Hour Restriction
@@ -258,14 +259,14 @@
                             :key="index"
                             class="flex items-center px-3 py-1.5 text-sm rounded-lg border cursor-pointer transition-all duration-200"
                             :class="
-                              editingData.restrictedDays.includes(index)
+                              isDayRestricted(editingData.restrictedDays, index)
                                 ? 'bg-red-500 border-red-500 text-white'
                                 : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                             "
                           >
                             <input
                               type="checkbox"
-                              :checked="editingData.restrictedDays.includes(index)"
+                              :checked="isDayRestricted(editingData.restrictedDays, index)"
                               @change="toggleRestrictedDay(editingData.restrictedDays, index)"
                               class="sr-only"
                             />
@@ -344,11 +345,11 @@
                             </p>
                             <div class="flex flex-wrap gap-1">
                               <span
-                                v-for="dayIndex in sampler.restrictedDays"
-                                :key="dayIndex"
+                                v-for="backendDayIndex in sampler.restrictedDays"
+                                :key="backendDayIndex"
                                 class="text-xs px-2 py-1 rounded bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                               >
-                                {{ daysOfWeek[dayIndex] }}
+                                {{ dayIndexMapping.indexOf(backendDayIndex) !== -1 ? daysOfWeek[dayIndexMapping.indexOf(backendDayIndex)] : getDayName(backendDayIndex) }}
                               </span>
                             </div>
                           </div>
@@ -478,6 +479,18 @@
       </div>
     </Dialog>
   </TransitionRoot>
+
+  <!-- Confirmation Modal -->
+  <ConfirmationModal
+    :isOpen="showConfirmModal"
+    :title="confirmModalTitle"
+    :message="confirmModalMessage"
+    variant="danger"
+    confirmText="Yes, delete"
+    @confirm="executePermanentDelete"
+    @close="showConfirmModal = false"
+  />
+
 </template>
 
 <script setup lang="ts">
@@ -490,6 +503,8 @@ import {
   TransitionChild,
 } from '@headlessui/vue'
 import dropdownService from '@/services/dropdownService'
+import ConfirmationModal from '@/components/ui/ConfirmationModal.vue'
+import { useToast } from 'vue-toastification'
 
 interface Sampler {
   _id: string
@@ -514,8 +529,15 @@ const emit = defineEmits<{
   updated: []
 }>()
 
-// Days of week
-const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+// Initialize toast
+const toast = useToast()
+
+// Days of week (ordered Monday to Sunday for display)
+const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+// Days of week mapping: frontend display order to backend day indices
+// Backend uses: 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
+const dayIndexMapping = [1, 2, 3, 4, 5, 6, 0] // Maps display index to backend index
 
 // Component state
 const samplers = ref<Sampler[]>([])
@@ -525,6 +547,12 @@ const editingId = ref<string | null>(null)
 const isUpdating = ref(false)
 const isDeletingId = ref<string | null>(null)
 const isPermanentDeletingId = ref<string | null>(null)
+
+// Confirmation modal state
+const showConfirmModal = ref(false)
+const confirmModalTitle = ref('')
+const confirmModalMessage = ref('')
+const pendingDeleteData = ref<{ id: string; name: string } | null>(null)
 
 // New sampler form
 const newSampler = ref({
@@ -569,14 +597,42 @@ const loadSamplers = async () => {
   }
 }
 
+// Show toast notifications using vue-toastification
+const showSuccessToast = (title: string, message: string) => {
+  toast.success(`${title}: ${message}`)
+}
+
+const showErrorToast = (title: string, message: string) => {
+  toast.error(`${title}: ${message}`)
+}
+
+const showWarningToast = (title: string, message: string) => {
+  toast.warning(`${title}: ${message}`)
+}
+
 // Toggle restricted day
-const toggleRestrictedDay = (days: number[], dayIndex: number) => {
-  const index = days.indexOf(dayIndex)
+// displayIndex: the index in the daysOfWeek array (0=Mon, 1=Tue, ... 6=Sun in display)
+// We need to convert it to backend day index (0=Sun, 1=Mon, ..., 6=Sat)
+const toggleRestrictedDay = (days: number[], displayIndex: number) => {
+  const backendDayIndex = dayIndexMapping[displayIndex]
+  const index = days.indexOf(backendDayIndex)
   if (index > -1) {
     days.splice(index, 1)
   } else {
-    days.push(dayIndex)
+    days.push(backendDayIndex)
   }
+}
+
+// Check if a day is restricted in the display order
+const isDayRestricted = (restrictedDays: number[], displayIndex: number) => {
+  const backendDayIndex = dayIndexMapping[displayIndex]
+  return restrictedDays.includes(backendDayIndex)
+}
+
+// Get day name from backend index (for fallback display)
+const getDayName = (backendDayIndex: number) => {
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  return dayNames[backendDayIndex]
 }
 
 // Add new sampler
@@ -607,12 +663,13 @@ const handleAdd = async () => {
 
       await loadSamplers()
       emit('updated')
+      showSuccessToast('Success', 'Sampler added successfully')
     } else {
-      alert(`Error: ${response.message}`)
+      showErrorToast('Error', response.message || 'Error adding sampler')
     }
   } catch (error) {
     console.error('Error adding sampler:', error)
-    alert('Failed to add sampler')
+    showErrorToast('Error', 'Failed to add sampler')
   } finally {
     isAdding.value = false
   }
@@ -659,12 +716,13 @@ const handleUpdate = async (id: string) => {
       cancelEdit()
       await loadSamplers()
       emit('updated')
+      showSuccessToast('Success', 'Sampler updated successfully')
     } else {
-      alert(`Error: ${response.message}`)
+      showErrorToast('Error', response.message || 'Error updating sampler')
     }
   } catch (error) {
     console.error('Error updating sampler:', error)
-    alert('Failed to update sampler')
+    showErrorToast('Error', 'Failed to update sampler')
   } finally {
     isUpdating.value = false
   }
@@ -680,12 +738,14 @@ const handleToggleActive = async (id: string, currentStatus: boolean) => {
     if (response.success) {
       await loadSamplers()
       emit('updated')
+      const action = currentStatus ? 'deactivated' : 'activated'
+      showSuccessToast('Success', `Sampler ${action} successfully`)
     } else {
-      alert(`Error: ${response.message}`)
+      showErrorToast('Error', response.message || 'Error updating status')
     }
   } catch (error) {
     console.error('Error toggling status:', error)
-    alert('Failed to update status')
+    showErrorToast('Error', 'Failed to update status')
   } finally {
     isDeletingId.value = null
   }
@@ -693,31 +753,37 @@ const handleToggleActive = async (id: string, currentStatus: boolean) => {
 
 // Permanent delete
 const handlePermanentDelete = async (id: string, name: string) => {
-  const confirmed = confirm(
-    `⚠️ WARNING: This will PERMANENTLY delete "${name}" from the database.\n\nThis action CANNOT be undone!\n\nAre you sure you want to continue?`
-  )
-  if (!confirmed) return
+  // Store pending delete data
+  pendingDeleteData.value = { id, name }
+  
+  // Show confirmation modal
+  confirmModalTitle.value = 'Permanent Delete'
+  confirmModalMessage.value = `Are you sure you want to permanently delete "${name}"?\n\nThis action cannot be undone and will remove the sampler from the database.`
+  showConfirmModal.value = true
+}
 
-  const doubleConfirmed = confirm(
-    `⚠️ FINAL CONFIRMATION\n\nYou are about to permanently delete "${name}".\n\nAre you absolutely sure?`
-  )
-  if (!doubleConfirmed) return
+// Execute the permanent delete after confirmation
+const executePermanentDelete = async () => {
+  if (!pendingDeleteData.value) return
 
+  const { id, name } = pendingDeleteData.value
   isPermanentDeletingId.value = id
+
   try {
     const response = await dropdownService.permanentDelete('samplers', id)
     if (response.success) {
       await loadSamplers()
       emit('updated')
-      alert(`✅ "${name}" has been permanently deleted from the database.`)
+      showSuccessToast('Deleted', `"${name}" has been permanently deleted from the database`)
     } else {
-      alert(`❌ Error: ${response.message}`)
+      showErrorToast('Error', response.message || 'Error deleting sampler')
     }
   } catch (error) {
     console.error('Error permanently deleting sampler:', error)
-    alert('❌ Failed to permanently delete sampler')
+    showErrorToast('Error', 'Failed to permanently delete sampler')
   } finally {
     isPermanentDeletingId.value = null
+    pendingDeleteData.value = null
   }
 }
 

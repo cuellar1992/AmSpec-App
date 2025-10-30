@@ -19,6 +19,35 @@ export const berthsData = [
   { name: 'M-7' },
 ];
 
+export const clientsData = [
+  { name: 'Mobil' },
+  { name: 'Trafigura' },
+  { name: 'Chevron SG' },
+  { name: 'PCIA' },
+  { name: 'Chevron Downstream' },
+  { name: 'Glencore' },
+  { name: 'United' },
+  { name: 'S-Oil' },
+  { name: 'Q8' },
+  { name: 'Gunvor' },
+  { name: 'ASCC' },
+  { name: 'Ampol AU' },
+  { name: 'Ampol SG' },
+  { name: 'BP AU' },
+  { name: 'Viva Energy' },
+  { name: 'BP SG' },
+]
+
+export const productTypesData = [
+  { name: '91 Ron' },
+  { name: '95 Ron' },
+  { name: '98 Ron' },
+  { name: 'Jet-A1' },
+  { name: 'Diesel' },
+  { name: 'Anhydrous Ammonia' },
+  { name: 'Base Oils' },
+]
+
 export const chemistsData = [
   { name: 'Farshid' },
   { name: 'Anh' },

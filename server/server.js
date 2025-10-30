@@ -32,6 +32,8 @@ app.get('/', (req, res) => {
       samplers: '/api/dropdowns/samplers',
       surveyors: '/api/dropdowns/surveyors',
       terminals: '/api/dropdowns/terminals',
+      clients: '/api/dropdowns/clients',
+      productTypes: '/api/dropdowns/product-types',
     },
   });
 });

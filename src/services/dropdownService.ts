@@ -62,7 +62,15 @@ class DropdownService {
   async update(
     type: string,
     id: string,
-    data: { name?: string; isActive?: boolean }
+    data: { 
+      name?: string
+      isActive?: boolean
+      email?: string
+      phone?: string
+      has24HourRestriction?: boolean
+      restrictedDays?: number[]
+      [key: string]: any
+    }
   ): Promise<ApiResponse<DropdownItem>> {
     try {
       const response = await api.put(`${this.baseUrl}/${type}/${id}`, data)
@@ -127,6 +135,14 @@ class DropdownService {
 
   async getTerminals(includeInactive = false) {
     return this.getAll('terminals', includeInactive)
+  }
+
+  async getClients(includeInactive = false) {
+    return this.getAll('clients', includeInactive)
+  }
+
+  async getProductTypes(includeInactive = false) {
+    return this.getAll('product-types', includeInactive)
   }
 }
 

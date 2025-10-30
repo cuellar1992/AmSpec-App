@@ -51,9 +51,18 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <!-- Client - Multi Select -->
       <div>
-        <label for="client" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-          Client
-        </label>
+        <div class="flex items-center justify-between mb-2">
+          <label for="client" class="block text-sm font-medium text-gray-900 dark:text-white">
+            Client
+          </label>
+          <button
+            type="button"
+            @click="openManageModal('clients', 'Clients', 'Client')"
+            class="text-xs text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 font-medium"
+          >
+            Manage
+          </button>
+        </div>
         <MultipleSelect
           v-model="formData.clients"
           :options="clientOptions"
@@ -63,9 +72,18 @@
 
       <!-- Product Types - Multi Select - Required -->
       <div>
-        <label for="productTypes" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-          Product Types <span class="text-red-500">*</span>
-        </label>
+        <div class="flex items-center justify-between mb-2">
+          <label for="productTypes" class="block text-sm font-medium text-gray-900 dark:text-white">
+            Product Types <span class="text-red-500">*</span>
+          </label>
+          <button
+            type="button"
+            @click="openManageModal('product-types', 'Product Types', 'Product Type')"
+            class="text-xs text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 font-medium"
+          >
+            Manage
+          </button>
+        </div>
         <MultipleSelect
           v-model="formData.productTypes"
           :options="productTypeOptions"
@@ -113,7 +131,7 @@
             id="pilotOnBoard"
             v-model="formData.pilotOnBoard"
             :config="dateTimeConfig"
-            class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+            class="h-11 w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
             placeholder="Select date and time"
           />
           <span
@@ -148,7 +166,7 @@
             id="etb"
             v-model="formData.etb"
             :config="dateTimeConfig"
-            class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+            class="h-11 w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
             placeholder="Select date and time"
           />
           <span
@@ -183,7 +201,7 @@
             id="etc"
             v-model="formData.etc"
             :config="dateTimeConfig"
-            class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+            class="h-11 w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
             placeholder="Select date and time"
           />
           <span
@@ -391,8 +409,8 @@ const formData = ref({
   vesselName: '',
   amspecReference: '',
   clientReference: '',
-  clients: [] as string[],
-  productTypes: [] as string[],
+  clients: [] as Array<{ value: string; label: string }>,
+  productTypes: [] as Array<{ value: string; label: string }>,
   agent: '',
   pilotOnBoard: '',
   etb: '',
@@ -405,8 +423,8 @@ const formData = ref({
 })
 
 // Dropdown options loaded from MongoDB
-const clientOptions = ref<string[]>([])
-const productTypeOptions = ref<string[]>([])
+const clientOptions = ref<Array<{ value: string; label: string }>>([])
+const productTypeOptions = ref<Array<{ value: string; label: string }>>([])
 const agentOptions = ref<string[]>([])
 const terminalOptions = ref<string[]>([])
 const berthOptions = ref<string[]>([])
@@ -452,6 +470,18 @@ const loadDropdownData = async () => {
     if (terminalsResponse.success && terminalsResponse.data) {
       terminalOptions.value = terminalsResponse.data.map((item) => item.name)
     }
+
+    // Load clients
+    const clientsResponse = await dropdownService.getClients()
+    if (clientsResponse.success && clientsResponse.data) {
+      clientOptions.value = clientsResponse.data.map((item) => ({ value: item.name, label: item.name }))
+    }
+
+    // Load product types
+    const productTypesResponse = await dropdownService.getProductTypes()
+    if (productTypesResponse.success && productTypesResponse.data) {
+      productTypeOptions.value = productTypesResponse.data.map((item) => ({ value: item.name, label: item.name }))
+    }
   } catch (error) {
     console.error('Error loading dropdown data:', error)
   }
@@ -470,6 +500,9 @@ const dateTimeConfig = {
   altFormat: 'F j, Y at h:i K',
   time_24hr: true,
   minuteIncrement: 15,
+  locale: {
+    firstDayOfWeek: 1, // Start week on Monday (0 = Sunday, 1 = Monday)
+  },
 }
 
 // Loading state
@@ -491,8 +524,8 @@ const handleSubmit = async () => {
       vesselName: formData.value.vesselName,
       amspecReference: formData.value.amspecReference,
       clientReference: formData.value.clientReference || undefined,
-      clients: formData.value.clients.length > 0 ? formData.value.clients : undefined,
-      productTypes: formData.value.productTypes,
+      clients: formData.value.clients.length > 0 ? formData.value.clients.map((c) => c.value) : undefined,
+      productTypes: formData.value.productTypes.map((pt) => pt.value),
       agent: formData.value.agent || undefined,
       pilotOnBoard: formData.value.pilotOnBoard || undefined,
       etb: formData.value.etb || undefined,
@@ -539,8 +572,8 @@ const handleReset = () => {
     vesselName: '',
     amspecReference: '',
     clientReference: '',
-    clients: [],
-    productTypes: [],
+  clients: [] as Array<{ value: string; label: string }>,
+  productTypes: [] as Array<{ value: string; label: string }>,
     agent: '',
     pilotOnBoard: '',
     etb: '',

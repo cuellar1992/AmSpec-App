@@ -526,7 +526,8 @@ span.flatpickr-weekday,
   @apply right-0;
 }
 .flatpickr-calendar.hasTime {
-  width: 300px !important;
+  min-width: 310px !important;
+  width: auto !important;
 }
 .flatpickr-calendar.hasTime .flatpickr-time {
   border: transparent !important;
@@ -836,4 +837,17 @@ span.flatpickr-weekday,
 .dark .flatpickr-months .flatpickr-prev-month svg,
 .dark .flatpickr-months .flatpickr-next-month svg {
   @apply fill-gray-400;
+}
+
+/* Vue Toastification - High z-index to appear above header */
+.Vue-Toastification__container {
+  z-index: 999999 !important;
+}
+
+.high-z-toast {
+  z-index: 999999 !important;
+}
+
+.high-z-toast-body {
+  z-index: 999999 !important;
 }

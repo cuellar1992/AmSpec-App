@@ -5,6 +5,8 @@ import Chemist from '../models/Chemist.js';
 import Sampler from '../models/Sampler.js';
 import Surveyor from '../models/Surveyor.js';
 import Terminal from '../models/Terminal.js';
+import Client from '../models/Client.js';
+import ProductType from '../models/ProductType.js';
 import { createDropdownController } from '../controllers/dropdownController.js';
 
 const router = express.Router();
@@ -16,6 +18,8 @@ const chemistController = createDropdownController(Chemist, 'Chemist');
 const samplerController = createDropdownController(Sampler, 'Sampler');
 const surveyorController = createDropdownController(Surveyor, 'Surveyor');
 const terminalController = createDropdownController(Terminal, 'Terminal');
+const clientController = createDropdownController(Client, 'Client');
+const productTypeController = createDropdownController(ProductType, 'ProductType');
 
 // Agent routes
 router.route('/agents').get(agentController.getAll).post(agentController.create);
@@ -70,5 +74,23 @@ router
   .put(terminalController.update)
   .delete(terminalController.delete);
 router.route('/terminals/:id/permanent').delete(terminalController.permanentDelete);
+
+// Client routes
+router.route('/clients').get(clientController.getAll).post(clientController.create);
+router
+  .route('/clients/:id')
+  .get(clientController.getById)
+  .put(clientController.update)
+  .delete(clientController.delete);
+router.route('/clients/:id/permanent').delete(clientController.permanentDelete);
+
+// ProductType routes
+router.route('/product-types').get(productTypeController.getAll).post(productTypeController.create);
+router
+  .route('/product-types/:id')
+  .get(productTypeController.getById)
+  .put(productTypeController.update)
+  .delete(productTypeController.delete);
+router.route('/product-types/:id/permanent').delete(productTypeController.permanentDelete);
 
 export default router;
