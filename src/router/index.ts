@@ -55,6 +55,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/molekulis-loading',
+      name: 'Molekulis Loading',
+      component: () => import('../views/Operations/MolekulisLoading.vue'),
+      meta: {
+        title: 'Molekulis Loading',
+      },
+    },
+    {
       path: '/line-chart',
       name: 'Line Chart',
       component: () => import('../views/Chart/LineChart/LineChart.vue'),

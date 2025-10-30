@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import cron from 'node-cron';
 import connectDB from './config/database.js';
 import shipNominationRoutes from './routes/shipNominations.js';
+import molekulisLoadingRoutes from './routes/molekulisLoading.js';
 import dropdownRoutes from './routes/dropdowns.js';
 import ShipNomination from './models/ShipNomination.js';
 
@@ -41,6 +42,7 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: {
       shipNominations: '/api/ship-nominations',
+      molekulisLoading: '/api/molekulis-loading',
       agents: '/api/dropdowns/agents',
       berths: '/api/dropdowns/berths',
       chemists: '/api/dropdowns/chemists',
@@ -54,6 +56,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/ship-nominations', shipNominationRoutes);
+app.use('/api/molekulis-loading', molekulisLoadingRoutes);
 app.use('/api/dropdowns', dropdownRoutes);
 
 // Error handling middleware
