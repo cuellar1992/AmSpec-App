@@ -5,11 +5,38 @@ import ShipNomination from '../models/ShipNomination.js';
 // @access  Public
 export const getAllShipNominations = async (req, res) => {
   try {
-    const nominations = await ShipNomination.find().sort({ createdAt: -1 });
+    // Update all statuses based on current date before fetching
+    await ShipNomination.updateAllStatuses();
+    // Pagination params
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    // Sorting params
+    const sortBy = (req.query.sortBy || 'etb');
+    const sortOrder = (req.query.sortOrder || 'desc') === 'asc' ? 1 : -1;
+    const sort = {};
+    if (sortBy === 'etb') {
+      sort.etb = sortOrder;
+      // Secondary sort for stability
+      sort.createdAt = -1;
+    } else {
+      sort.createdAt = sortOrder;
+    }
+
+    const total = await ShipNomination.countDocuments();
+    const nominations = await ShipNomination.find()
+      .sort(sort)
+      .skip(skip)
+      .limit(limit);
 
     res.status(200).json({
       success: true,
       count: nominations.length,
+      total,
+      page,
+      pages: Math.ceil(total / limit) || 1,
+      limit,
       data: nominations,
     });
   } catch (error) {
@@ -47,6 +74,28 @@ export const getShipNominationById = async (req, res) => {
     });
   }
 };
+
+// @desc    Check if AmSpec reference exists
+// @route   GET /api/ship-nominations/ref/:amspecReference
+// @access  Public
+export const getShipNominationByRef = async (req, res) => {
+  try {
+    const ref = decodeURIComponent(req.params.amspecReference)
+    const nomination = await ShipNomination.findOne({ amspecReference: ref })
+
+    res.status(200).json({
+      success: true,
+      exists: !!nomination,
+      data: nomination || null,
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error checking AmSpec reference',
+      error: error.message,
+    })
+  }
+}
 
 // @desc    Create new ship nomination
 // @route   POST /api/ship-nominations
@@ -177,6 +226,27 @@ export const getShipNominationsByStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching ship nominations',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Update all nomination statuses based on dates
+// @route   POST /api/ship-nominations/update-statuses
+// @access  Public
+export const updateAllStatuses = async (req, res) => {
+  try {
+    const nominations = await ShipNomination.updateAllStatuses();
+    
+    res.status(200).json({
+      success: true,
+      message: 'All statuses updated successfully',
+      count: nominations.length,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating statuses',
       error: error.message,
     });
   }

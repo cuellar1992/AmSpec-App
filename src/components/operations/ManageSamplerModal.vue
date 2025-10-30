@@ -73,8 +73,10 @@
                         v-model="newSampler.email"
                         type="email"
                         placeholder="sampler@amspec.com"
-                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 transition-all duration-200"
+                        class="w-full rounded-lg border bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+                        :class="newSampler.email && !isValidEmail(newSampler.email) ? 'border-red-500 focus:ring-red-500/20 dark:border-red-600' : 'border-gray-300 focus:border-brand-500 focus:ring-brand-500/20 dark:border-gray-700'"
                       />
+                      <p v-if="newSampler.email && !isValidEmail(newSampler.email)" class="mt-1 text-xs text-red-600 dark:text-red-400">Enter a valid email address</p>
                     </div>
 
                     <!-- Phone -->
@@ -86,8 +88,11 @@
                         v-model="newSampler.phone"
                         type="tel"
                         placeholder="+61 400 000 000"
-                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 transition-all duration-200"
+                        @input="onPhoneInput('new')"
+                        class="w-full rounded-lg border bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+                        :class="newSampler.phone && !isValidAuPhone(newSampler.phone) ? 'border-red-500 focus:ring-red-500/20 dark:border-red-600' : 'border-gray-300 focus:border-brand-500 focus:ring-brand-500/20 dark:border-gray-700'"
                       />
+                      <p v-if="newSampler.phone && !isValidAuPhone(newSampler.phone)" class="mt-1 text-xs text-red-600 dark:text-red-400">Use format +61 000 000 000</p>
                     </div>
 
                     <!-- 24 Hour Restriction Switch -->
@@ -219,8 +224,10 @@
                           <input
                             v-model="editingData.email"
                             type="email"
-                            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-900 dark:text-white transition-all duration-200"
+                            class="w-full rounded-lg border bg-white px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 transition-all duration-200 dark:bg-gray-900 dark:text-white"
+                            :class="editingData.email && !isValidEmail(editingData.email) ? 'border-red-500 focus:ring-red-500/20 dark:border-red-600' : 'border-gray-300 focus:border-brand-500 focus:ring-brand-500/20 dark:border-gray-600'"
                           />
+                          <p v-if="editingData.email && !isValidEmail(editingData.email)" class="mt-1 text-xs text-red-600 dark:text-red-400">Enter a valid email address</p>
                         </div>
                         <div>
                           <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">
@@ -229,8 +236,11 @@
                           <input
                             v-model="editingData.phone"
                             type="tel"
-                            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-900 dark:text-white transition-all duration-200"
+                            @input="onPhoneInput('edit')"
+                            class="w-full rounded-lg border bg-white px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 transition-all duration-200 dark:bg-gray-900 dark:text-white"
+                            :class="editingData.phone && !isValidAuPhone(editingData.phone) ? 'border-red-500 focus:ring-red-500/20 dark:border-red-600' : 'border-gray-300 focus:border-brand-500 focus:ring-brand-500/20 dark:border-gray-600'"
                           />
+                          <p v-if="editingData.phone && !isValidAuPhone(editingData.phone)" class="mt-1 text-xs text-red-600 dark:text-red-400">Use format +61 000 000 000</p>
                         </div>
                         <div class="flex items-center">
                           <label class="relative inline-flex items-center cursor-pointer">
@@ -563,6 +573,16 @@ const newSampler = ref({
   restrictedDays: [] as number[],
 })
 
+const resetNewSampler = () => {
+  newSampler.value = {
+    name: '',
+    email: '',
+    phone: '',
+    has24HourRestriction: false,
+    restrictedDays: [],
+  }
+}
+
 // Editing data
 const editingData = ref({
   name: '',
@@ -577,6 +597,7 @@ watch(
   () => props.isOpen,
   async (isOpen) => {
     if (isOpen) {
+      resetNewSampler()
       await loadSamplers()
     }
   }
@@ -610,6 +631,45 @@ const showWarningToast = (title: string, message: string) => {
   toast.warning(`${title}: ${message}`)
 }
 
+// Validation helpers
+const isValidEmail = (email: string) => {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return re.test(email)
+}
+
+const auPhoneRegex = /^\+61\s\d{3}\s\d{3}\s\d{3}$/
+const isValidAuPhone = (phone: string) => auPhoneRegex.test(phone)
+
+const formatAuPhone = (value: string) => {
+  // Keep '+' and digits only
+  let digits = value.replace(/[^\d+]/g, '')
+  // Ensure starts with +61
+  if (!digits.startsWith('+61')) {
+    // If user typed 61 or 0, normalize
+    if (digits.startsWith('61')) digits = '+61' + digits.slice(2)
+    else if (digits.startsWith('0')) digits = '+61' + digits.slice(1)
+    else if (digits.startsWith('+')) digits = '+61' + digits.slice(1)
+    else if (digits) digits = '+61' + digits
+    else digits = '+61'
+  }
+  // Remove '+61' and format remaining as 9 digits split 3-3-3
+  const rest = digits.replace('+61', '').replace(/\D/g, '').slice(0, 9)
+  const parts = [] as string[]
+  if (rest.length > 0) parts.push(rest.slice(0, Math.min(3, rest.length)))
+  if (rest.length > 3) parts.push(rest.slice(3, Math.min(6, rest.length)))
+  if (rest.length > 6) parts.push(rest.slice(6, Math.min(9, rest.length)))
+  const spaced = parts.join(' ')
+  return spaced ? `+61 ${spaced}` : '+61 '
+}
+
+const onPhoneInput = (mode: 'new' | 'edit') => {
+  if (mode === 'new') {
+    newSampler.value.phone = formatAuPhone(newSampler.value.phone || '')
+  } else {
+    editingData.value.phone = formatAuPhone(editingData.value.phone || '')
+  }
+}
+
 // Toggle restricted day
 // displayIndex: the index in the daysOfWeek array (0=Mon, 1=Tue, ... 6=Sun in display)
 // We need to convert it to backend day index (0=Sun, 1=Mon, ..., 6=Sat)
@@ -638,6 +698,14 @@ const getDayName = (backendDayIndex: number) => {
 // Add new sampler
 const handleAdd = async () => {
   if (!newSampler.value.name.trim()) return
+  if (newSampler.value.email && !isValidEmail(newSampler.value.email)) {
+    showErrorToast('Invalid', 'Please enter a valid email')
+    return
+  }
+  if (newSampler.value.phone && !isValidAuPhone(newSampler.value.phone)) {
+    showErrorToast('Invalid', 'Please use phone format +61 000 000 000')
+    return
+  }
 
   isAdding.value = true
   try {
@@ -653,13 +721,7 @@ const handleAdd = async () => {
       })
 
       // Reset form
-      newSampler.value = {
-        name: '',
-        email: '',
-        phone: '',
-        has24HourRestriction: false,
-        restrictedDays: [],
-      }
+      resetNewSampler()
 
       await loadSamplers()
       emit('updated')
@@ -702,6 +764,14 @@ const cancelEdit = () => {
 // Update sampler
 const handleUpdate = async (id: string) => {
   if (!editingData.value.name.trim()) return
+  if (editingData.value.email && !isValidEmail(editingData.value.email)) {
+    showErrorToast('Invalid', 'Please enter a valid email')
+    return
+  }
+  if (editingData.value.phone && !isValidAuPhone(editingData.value.phone)) {
+    showErrorToast('Invalid', 'Please use phone format +61 000 000 000')
+    return
+  }
 
   isUpdating.value = true
   try {
@@ -790,6 +860,7 @@ const executePermanentDelete = async () => {
 // Close modal
 const handleClose = () => {
   cancelEdit()
+  resetNewSampler()
   emit('close')
 }
 </script>

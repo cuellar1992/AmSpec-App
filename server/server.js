@@ -1,15 +1,30 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import cron from 'node-cron';
 import connectDB from './config/database.js';
 import shipNominationRoutes from './routes/shipNominations.js';
 import dropdownRoutes from './routes/dropdowns.js';
+import ShipNomination from './models/ShipNomination.js';
 
 // Load environment variables
 dotenv.config();
 
 // Connect to MongoDB
 connectDB();
+
+// Cron job to update nomination statuses every hour
+cron.schedule('0 * * * *', async () => {
+  try {
+    console.log('🔄 Running scheduled status update...');
+    await ShipNomination.updateAllStatuses();
+    console.log('✅ All nomination statuses updated successfully');
+  } catch (error) {
+    console.error('❌ Error updating nomination statuses:', error.message);
+  }
+});
+
+console.log('⏰ Cron job scheduled to run every hour');
 
 // Initialize Express app
 const app = express();

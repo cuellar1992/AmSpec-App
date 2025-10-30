@@ -104,7 +104,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 
 const props = defineProps({
   options: {
@@ -122,6 +122,11 @@ const emit = defineEmits(['update:modelValue'])
 const isOpen = ref(false)
 const selectedItems = ref(props.modelValue)
 const multiSelectRef = ref(null)
+
+// Watch for changes in modelValue prop and sync internal state
+watch(() => props.modelValue, (newValue) => {
+  selectedItems.value = newValue
+}, { deep: true })
 
 const toggleDropdown = () => {
   isOpen.value = !isOpen.value
