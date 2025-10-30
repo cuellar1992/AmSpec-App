@@ -56,8 +56,8 @@
       <div>
         <div class="flex items-center justify-between mb-2">
           <label for="client" class="block text-sm font-medium text-gray-900 dark:text-white">
-            Client
-          </label>
+          Client
+        </label>
           <button
             type="button"
             @click="openManageModal('clients', 'Clients', 'Client')"
@@ -77,8 +77,8 @@
       <div>
         <div class="flex items-center justify-between mb-2">
           <label for="productTypes" class="block text-sm font-medium text-gray-900 dark:text-white">
-            Product Types <span class="text-red-500">*</span>
-          </label>
+          Product Types <span class="text-red-500">*</span>
+        </label>
           <button
             type="button"
             @click="openManageModal('product-types', 'Product Types', 'Product Type')"

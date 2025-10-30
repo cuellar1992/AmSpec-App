@@ -63,6 +63,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/other-jobs',
+      name: 'Other Jobs',
+      component: () => import('../views/Operations/OtherJobs.vue'),
+      meta: {
+        title: 'Other Jobs',
+      },
+    },
+    {
       path: '/line-chart',
       name: 'Line Chart',
       component: () => import('../views/Chart/LineChart/LineChart.vue'),

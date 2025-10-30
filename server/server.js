@@ -5,6 +5,7 @@ import cron from 'node-cron';
 import connectDB from './config/database.js';
 import shipNominationRoutes from './routes/shipNominations.js';
 import molekulisLoadingRoutes from './routes/molekulisLoading.js';
+import otherJobsRoutes from './routes/otherJobs.js';
 import dropdownRoutes from './routes/dropdowns.js';
 import ShipNomination from './models/ShipNomination.js';
 
@@ -51,12 +52,14 @@ app.get('/', (req, res) => {
       terminals: '/api/dropdowns/terminals',
       clients: '/api/dropdowns/clients',
       productTypes: '/api/dropdowns/product-types',
+      otherJobs: '/api/other-jobs',
     },
   });
 });
 
 app.use('/api/ship-nominations', shipNominationRoutes);
 app.use('/api/molekulis-loading', molekulisLoadingRoutes);
+app.use('/api/other-jobs', otherJobsRoutes);
 app.use('/api/dropdowns', dropdownRoutes);
 
 // Error handling middleware
