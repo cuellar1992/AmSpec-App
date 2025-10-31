@@ -305,10 +305,111 @@
       </ComponentCard>
 
       <!-- Right: Office Sampling -->
-      <ComponentCard title="Office Sampling" description="Sampling roster schedule">
+      <ComponentCard title="Roster" description="Sampling roster schedule">
         <div class="p-6">
-          <div class="flex items-center justify-center h-64">
-            <p class="text-gray-500 dark:text-gray-400 text-sm">Under Development</p>
+          <h4 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">Office Sampling</h4>
+          
+          <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Who</th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">START OFFICE</th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">FINISH SAMPLING</th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">HOURS</th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+                <tr v-if="officeSamplingData.length === 0" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <td colspan="5" class="px-6 py-4 text-sm text-center text-gray-500 dark:text-gray-400">No data available. Select a vessel to populate the table.</td>
+                </tr>
+                <tr 
+                  v-for="(record, index) in officeSamplingData" 
+                  :key="index"
+                  class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                >
+                  <!-- Who -->
+                  <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                    <select
+                      v-if="editingIndex === index"
+                      v-model="editingData.who"
+                      class="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    >
+                      <option value="">Select sampler</option>
+                      <option v-for="sampler in samplerOptions" :key="sampler" :value="sampler">{{ sampler }}</option>
+                    </select>
+                    <span v-else class="block">{{ record.who || '-' }}</span>
+                  </td>
+                  
+                  <!-- START OFFICE -->
+                  <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    <div v-show="editingIndex === index">
+                      <flat-pickr
+                        :key="`start-${index}`"
+                        v-model="editingData.startOffice"
+                        :config="dateTimeConfig"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                      />
+                    </div>
+                    <span v-show="editingIndex !== index">{{ record.startOffice || '-' }}</span>
+                  </td>
+                  
+                  <!-- FINISH SAMPLING -->
+                  <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    <div v-show="editingIndex === index">
+                      <flat-pickr
+                        :key="`finish-${index}`"
+                        v-model="editingData.finishSampling"
+                        :config="dateTimeConfig"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                      />
+                    </div>
+                    <span v-show="editingIndex !== index">{{ record.finishSampling || '-' }}</span>
+                  </td>
+                  
+                  <!-- HOURS -->
+                  <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    <span v-if="editingIndex === index">{{ calculateEditingHours }}</span>
+                    <span v-else>{{ record.hours || '-' }}</span>
+                  </td>
+                  
+                  <!-- ACTIONS -->
+                  <td class="whitespace-nowrap px-6 py-4 text-sm">
+                    <div v-if="editingIndex === index" class="flex items-center gap-2">
+                      <button
+                        @click="saveEdit(index)"
+                        class="rounded-lg p-1.5 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20 transition-all duration-200"
+                        title="Save"
+                      >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </button>
+                      <button
+                        @click="cancelOfficeSamplingEdit"
+                        class="rounded-lg p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-all duration-200"
+                        title="Cancel"
+                      >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <button
+                      v-else
+                      @click="startEdit(index)"
+                      class="rounded-lg p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 transition-all duration-200"
+                      title="Edit"
+                    >
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </ComponentCard>
@@ -389,6 +490,205 @@ const handleSearch = async () => {
   }, 500) // 500ms debounce
 }
 
+// Office Sampling Data Interface
+interface OfficeSamplingRecord {
+  who: string
+  startOffice: string // Display formatted
+  startOfficeRaw: string // ISO format for editing
+  finishSampling: string // Display formatted
+  finishSamplingRaw: string // ISO format for editing
+  hours: string
+}
+
+// Office Sampling Data
+const officeSamplingData = ref<OfficeSamplingRecord[]>([])
+const editingIndex = ref<number | null>(null)
+const editingData = ref<{
+  who: string
+  startOffice: string
+  finishSampling: string
+  hours: string
+}>({
+  who: '',
+  startOffice: '',
+  finishSampling: '',
+  hours: ''
+})
+
+// Sampler options for dropdown
+const samplerOptions = ref<string[]>([])
+
+// Format date/time for display (24 hour format)
+const formatDateTimeForTable = (dateString: string) => {
+  if (!dateString) return ''
+  const d = new Date(dateString)
+  const year = d.getFullYear()
+  const month = d.toLocaleString('en-US', { month: 'short' })
+  const day = d.getDate()
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  return `${month} ${day}, ${year} ${hours}:${minutes}`
+}
+
+// Format date/time for flatpickr input (Y-m-d H:i)
+const formatDateTimeForInput = (dateString: string) => {
+  if (!dateString) return ''
+  const d = new Date(dateString)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}`
+}
+
+// Calculate hours between two dates
+const calculateHours = (startDate: Date, finishDate: Date) => {
+  const diffMs = finishDate.getTime() - startDate.getTime()
+  const diffHours = diffMs / (1000 * 60 * 60)
+  return diffHours.toFixed(2)
+}
+
+// Calculate hours in real-time during editing (reactive function)
+const calculateEditingHours = computed(() => {
+  if (editingIndex.value === null) {
+    return null
+  }
+
+  if (!editingData.value.startOffice || !editingData.value.finishSampling) {
+    return '-'
+  }
+
+  const startDate = new Date(editingData.value.startOffice)
+  const finishDate = new Date(editingData.value.finishSampling)
+
+  if (isNaN(startDate.getTime()) || isNaN(finishDate.getTime())) {
+    return '-'
+  }
+
+  if (finishDate <= startDate) {
+    return '0.00 hrs'
+  }
+
+  const hours = calculateHours(startDate, finishDate)
+  return `${hours} hrs`
+})
+
+// Populate Office Sampling table from ship nomination
+const populateOfficeSamplingTable = (ship: ShipNomination) => {
+  if (!ship.sampler || !ship.pilotOnBoard) {
+    officeSamplingData.value = []
+    return
+  }
+
+  // START OFFICE: Pilot on Board
+  const startOfficeDate = new Date(ship.pilotOnBoard)
+  
+  // FINISH SAMPLING: Pilot on Board + 5 hours
+  const finishSamplingDate = new Date(startOfficeDate.getTime() + (5 * 60 * 60 * 1000))
+  
+  // HOURS: Calculate difference
+  const hours = calculateHours(startOfficeDate, finishSamplingDate)
+
+  officeSamplingData.value = [{
+    who: ship.sampler,
+    startOffice: formatDateTimeForTable(ship.pilotOnBoard),
+    startOfficeRaw: startOfficeDate.toISOString(),
+    finishSampling: formatDateTimeForTable(finishSamplingDate.toISOString()),
+    finishSamplingRaw: finishSamplingDate.toISOString(),
+    hours: `${hours} hrs`
+  }]
+}
+
+// Start editing a record
+const startEdit = (index: number) => {
+  const record = officeSamplingData.value[index]
+  editingIndex.value = index
+  editingData.value = {
+    who: record.who,
+    startOffice: formatDateTimeForInput(record.startOfficeRaw),
+    finishSampling: formatDateTimeForInput(record.finishSamplingRaw),
+    hours: record.hours
+  }
+}
+
+// Save edited record
+const saveEdit = (index: number) => {
+  const currentRecord = officeSamplingData.value[index]
+  
+  // Use existing dates if not provided in editing data
+  let startDate: Date
+  let finishDate: Date
+  
+  if (editingData.value.startOffice) {
+    startDate = new Date(editingData.value.startOffice)
+    if (isNaN(startDate.getTime())) {
+      toast.warning('Invalid START OFFICE date format')
+      return
+    }
+  } else {
+    // Use existing date if not changed
+    startDate = new Date(currentRecord.startOfficeRaw)
+  }
+  
+  if (editingData.value.finishSampling) {
+    finishDate = new Date(editingData.value.finishSampling)
+    if (isNaN(finishDate.getTime())) {
+      toast.warning('Invalid FINISH SAMPLING date format')
+      return
+    }
+  } else {
+    // Use existing date if not changed
+    finishDate = new Date(currentRecord.finishSamplingRaw)
+  }
+
+  // Validate dates
+  if (isNaN(startDate.getTime()) || isNaN(finishDate.getTime())) {
+    toast.warning('Please fill in START OFFICE and FINISH SAMPLING')
+    return
+  }
+
+  if (finishDate <= startDate) {
+    toast.warning('FINISH SAMPLING must be after START OFFICE')
+    return
+  }
+
+  // Calculate hours automatically
+  const hours = calculateHours(startDate, finishDate)
+
+  // Update the record
+  officeSamplingData.value[index] = {
+    who: editingData.value.who || currentRecord.who,
+    startOffice: formatDateTimeForTable(startDate.toISOString()),
+    startOfficeRaw: startDate.toISOString(),
+    finishSampling: formatDateTimeForTable(finishDate.toISOString()),
+    finishSamplingRaw: finishDate.toISOString(),
+    hours: `${hours} hrs`
+  }
+
+  // Exit edit mode
+  editingIndex.value = null
+  editingData.value = {
+    who: '',
+    startOffice: '',
+    finishSampling: '',
+    hours: ''
+  }
+  
+  toast.success('Record updated successfully')
+}
+
+// Cancel editing Office Sampling
+const cancelOfficeSamplingEdit = () => {
+  editingIndex.value = null
+  editingData.value = {
+    who: '',
+    startOffice: '',
+    finishSampling: '',
+    hours: ''
+  }
+}
+
 // Select ship nomination and fill form
 const selectShipNomination = (ship: ShipNomination) => {
   // Fill form with ship nomination data
@@ -421,6 +721,9 @@ const selectShipNomination = (ship: ShipNomination) => {
   // Fill Pre/Post Discharge Testing with Chemist name
   formData.value.preDischargeTest = ship.chemist || ''
   formData.value.postDischargeTest = ship.chemist || ''
+
+  // Populate Office Sampling table
+  populateOfficeSamplingTable(ship)
 
   // Close dropdown and clear search
   showDropdown.value = false
@@ -496,7 +799,7 @@ const dateTimeConfig = {
   enableTime: true,
   dateFormat: 'Y-m-d H:i',
   altInput: true,
-  altFormat: 'F j, Y at h:i K',
+  altFormat: 'F j, Y at H:i',
   time_24hr: true,
   minuteIncrement: 15,
   locale: { firstDayOfWeek: 1 }
@@ -619,6 +922,12 @@ onMounted(async () => {
   const surveyorsResponse = await dropdownService.getSurveyors(true)
   if (surveyorsResponse.success && surveyorsResponse.data) {
     surveyorOptions.value = surveyorsResponse.data.map((s: { name: string }) => s.name)
+  }
+
+  // Load sampler options for Office Sampling dropdown
+  const samplersResponse = await dropdownService.getSamplers(true)
+  if (samplersResponse.success && samplersResponse.data) {
+    samplerOptions.value = samplersResponse.data.map((s: { name: string }) => s.name)
   }
 })
 </script>
