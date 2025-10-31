@@ -372,10 +372,6 @@ const showErrorToast = (title: string, message: string) => {
   toast.error(`${title}: ${message}`)
 }
 
-const showWarningToast = (title: string, message: string) => {
-  toast.warning(`${title}: ${message}`)
-}
-
 // Add new item
 const handleAdd = async () => {
   if (!newItemName.value.trim()) return

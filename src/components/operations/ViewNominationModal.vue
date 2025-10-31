@@ -225,7 +225,7 @@ interface Props {
   nomination: ShipNomination | null
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
 const emit = defineEmits<{
   close: []

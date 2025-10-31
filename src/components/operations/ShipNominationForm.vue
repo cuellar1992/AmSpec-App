@@ -726,7 +726,7 @@ const validateAmspecReference = async () => {
     if (res.success && res.exists) {
       amspecRefError.value = 'This AmSpec Reference already exists'
     }
-  } catch (e) {
+  } catch {
     // ignore network errors here; server will validate on submit
   }
 }
@@ -963,16 +963,17 @@ const handleSubmit = async () => {
     } else {
       toast.error(response.message || 'Failed to create nomination')
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error submitting form:', error)
 
     // Handle specific error types
-    if (error.response?.data) {
-      const errorData = error.response.data
-      if (errorData.errors && Array.isArray(errorData.errors)) {
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as { response?: { data?: { errors?: string[]; message?: string } } }
+      const errorData = axiosError.response?.data
+      if (errorData?.errors && Array.isArray(errorData.errors)) {
         toast.error(`Validation Errors: ${errorData.errors.join(', ')}`)
       } else {
-        toast.error(errorData.message || 'Failed to create nomination')
+        toast.error(errorData?.message || 'Failed to create nomination')
       }
     } else {
       toast.error('Network error. Please make sure the backend server is running on port 5000.')
@@ -1046,11 +1047,6 @@ const closeSamplerModal = () => {
 // Handle dropdown updated (reload dropdown data)
 const handleDropdownUpdated = () => {
   loadDropdownData()
-}
-
-// Handle nomination created (reload nominations)
-const handleNominationCreated = () => {
-  loadNominations()
 }
 
 // View nomination - show details modal
