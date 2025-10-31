@@ -84,7 +84,7 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">Total Hours</label>
-                <input :value="whoHours" disabled class="w-full rounded-lg border border-gray-300 bg-gray-100 px-4 py-2.5 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400" />
+                <input :value="whoHours" disabled class="h-11 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-700 cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300" />
               </div>
             </div>
 
@@ -227,16 +227,6 @@ const whoHours = computed(() => {
   return diff > 0 ? (diff / 36e5).toFixed(2) : '0.00'
 })
 
-const dateTimeConfig = {
-  enableTime: true,
-  dateFormat: 'Y-m-d H:i',
-  altInput: true,
-  altFormat: 'F j, Y at h:i K',
-  time_24hr: true,
-  minuteIncrement: 15,
-  locale: { firstDayOfWeek: 1 },
-}
-
 // Date-only config for global "When"
 const dateConfig = {
   enableTime: false,
@@ -337,7 +327,7 @@ const handleSubmit = async () => {
       who: whoSampler.value,
       startAt: start ? start.toISOString() : '',
       endAt: end ? end.toISOString() : '',
-      loads: loadsList.value.map((l) => ({ time: l.time, product: l.product as any })),
+      loads: loadsList.value.map((l) => ({ time: l.time, product: l.product as 'Hyvolt I' | 'Hyvol III' })),
     }
     console.debug('[ML] handleSubmit: payload', payload)
     const res = isEditing.value && editingId.value
@@ -352,8 +342,8 @@ const handleSubmit = async () => {
     } else {
       toast.error(res.message || 'Failed to create')
     }
-  } catch (e) {
-    console.error('[ML] handleSubmit: exception', e)
+  } catch (error) {
+    console.error('[ML] handleSubmit: exception', error)
     toast.error(isEditing.value ? 'Failed to update' : 'Failed to create')
   } finally {
     console.debug('[ML] handleSubmit: finalize -> set isSubmitting=false')
@@ -378,7 +368,7 @@ const loadItems = async () => {
       totalItems.value = res.total ?? res.count ?? 0
       totalPages.value = res.pages ?? Math.ceil((res.total ?? 0) / rowsPerPage.value)
     }
-  } catch (e) {
+  } catch {
     // noop
   }
 }
@@ -390,7 +380,7 @@ const goToNextPage = () => { if (currentPage.value < totalPages.value) { current
 onMounted(async () => {
   const samplersResponse = await dropdownService.getSamplers(true)
   if (samplersResponse.success && samplersResponse.data) {
-    samplerOptions.value = samplersResponse.data.map((s: any) => s.name)
+    samplerOptions.value = samplersResponse.data.map((s: { name: string }) => s.name)
   }
   await loadItems()
 })
@@ -464,11 +454,11 @@ const editItem = (item: MolekulisLoading) => {
     const d = new Date(iso)
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
   }
-  formWhen.value = normalizeYmd(item.when as any)
+  formWhen.value = normalizeYmd(item.when as string)
   whoSampler.value = item.who || ''
   whoStart.value = isoToTime(item.startAt)
   whoEnd.value = isoToTime(item.endAt)
-  loadsList.value = (item.loads || []).map((l: any) => ({ time: l.time, product: l.product as any }))
+  loadsList.value = (item.loads || []).map((l: { time: string; product: 'Hyvolt I' | 'Hyvol III' }) => ({ time: l.time, product: l.product }))
   submittedOnce.value = false
 }
 
@@ -481,7 +471,7 @@ const deleteItem = async (item: MolekulisLoading) => {
     } else {
       toast.error(res.message || 'Failed to delete')
     }
-  } catch (e) {
+  } catch {
     toast.error('Failed to delete')
   }
 }

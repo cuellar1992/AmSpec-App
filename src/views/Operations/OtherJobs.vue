@@ -53,7 +53,7 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">Total Hours</label>
-              <input :value="whoHours" disabled class="w-full rounded-lg border border-gray-300 bg-gray-100 px-4 py-2.5 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400" />
+              <input :value="whoHours" disabled class="h-11 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-700 cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300" />
             </div>
           </div>
 
@@ -217,7 +217,7 @@ const isEndInvalid = computed(() => !whoEnd.value)
 onMounted(async () => {
   const samplersResponse = await dropdownService.getSamplers(true)
   if (samplersResponse.success && samplersResponse.data) {
-    samplerOptions.value = samplersResponse.data.map((s: any) => s.name)
+    samplerOptions.value = samplersResponse.data.map((s: { name: string }) => s.name)
   }
 })
 
@@ -270,7 +270,7 @@ const handleSubmit = async () => {
     }
     await loadRows()
     resetForm()
-  } catch (e) {
+  } catch {
     toast.error('Failed to save')
   } finally {
     isSubmitting.value = false

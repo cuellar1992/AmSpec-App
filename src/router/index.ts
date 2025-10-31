@@ -55,6 +55,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/sampling-roster',
+      name: 'Sampling Roster',
+      component: () => import('../views/Operations/SamplingRoster.vue'),
+      meta: {
+        title: 'Sampling Roster',
+      },
+    },
+    {
       path: '/molekulis-loading',
       name: 'Molekulis Loading',
       component: () => import('../views/Operations/MolekulisLoading.vue'),

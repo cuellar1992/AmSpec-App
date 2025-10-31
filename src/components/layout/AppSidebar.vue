@@ -248,6 +248,7 @@ const menuGroups = [
         icon: PageIcon,
         subItems: [
           { name: "Ship Nomination", path: "/ship-nomination", pro: false },
+          { name: "Sampling Roster", path: "/sampling-roster", pro: false },
           { name: "Molekulis Loading", path: "/molekulis-loading", pro: false },
               { name: "Other Jobs", path: "/other-jobs", pro: false },
           { name: "Black Page", path: "/blank", pro: false },
