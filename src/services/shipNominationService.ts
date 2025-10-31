@@ -40,9 +40,25 @@ export interface ApiResponse<T> {
 
 // Get all ship nominations (paginated)
 export const getAllShipNominations = async (
-  params?: { page?: number; limit?: number; sortBy?: 'createdAt' | 'etb'; sortOrder?: 'asc' | 'desc' }
+  params?: { page?: number; limit?: number; sortBy?: 'createdAt' | 'etb'; sortOrder?: 'asc' | 'desc'; search?: string }
 ): Promise<ApiResponse<ShipNomination[]>> => {
   const response = await api.get('/ship-nominations', { params })
+  return response.data
+}
+
+// Search ship nominations by vessel name or reference
+export const searchShipNominations = async (
+  searchTerm: string,
+  limit: number = 10
+): Promise<ApiResponse<ShipNomination[]>> => {
+  const response = await api.get('/ship-nominations', {
+    params: {
+      search: searchTerm,
+      limit,
+      sortBy: 'etb',
+      sortOrder: 'desc'
+    }
+  })
   return response.data
 }
 
