@@ -120,7 +120,7 @@ shipNominationSchema.statics.updateAllStatuses = async function() {
 };
 
 // Index for faster queries
-shipNominationSchema.index({ amspecReference: 1 });
+// Note: amspecReference already has a unique index from the schema definition
 shipNominationSchema.index({ vesselName: 1 });
 shipNominationSchema.index({ status: 1 });
 shipNominationSchema.index({ createdAt: -1 });
