@@ -2,9 +2,9 @@
   <AdminLayout>
     <PageBreadcrumb pageTitle="Sampling Roster" />
 
-    <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="mt-4 grid grid-cols-1 lg:grid-cols-5 gap-6">
       <!-- Left: Form -->
-      <ComponentCard title="New Sampling Roster" description="Register a new sampling roster entry">
+      <ComponentCard title="New Sampling Roster" description="Register a new sampling roster entry" class="lg:col-span-2">
         <div class="p-6">
           <form class="space-y-6" @keydown.enter.prevent>
 
@@ -305,7 +305,7 @@
       </ComponentCard>
 
       <!-- Right: Office Sampling -->
-      <ComponentCard title="Roster" description="Sampling roster schedule">
+      <ComponentCard title="Roster" description="Sampling roster schedule" class="lg:col-span-3">
         <div class="p-6">
           <h4 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">Office Sampling</h4>
           
@@ -411,6 +411,132 @@
               </tbody>
             </table>
           </div>
+
+          <!-- Line Sampling Table -->
+          <div class="mt-6 mb-4 flex items-center justify-between">
+            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">Line Sampling</h4>
+            <div class="flex gap-2">
+              <button
+                v-if="lineSamplingData.length > 0"
+                type="button"
+                @click="clearLineSampling"
+                class="rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 transition-colors"
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                @click="handleAutoGenerate"
+                :disabled="isGenerating || !formData.startDischarge || !formData.dischargeTimeHours"
+                class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {{ isGenerating ? 'Generating...' : 'Auto generate' }}
+              </button>
+            </div>
+          </div>
+          
+          <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Who</th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Start</th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Finish</th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Hours</th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+                <tr v-if="lineSamplingData.length === 0" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <td colspan="5" class="px-6 py-4 text-sm text-center text-gray-500 dark:text-gray-400">No data available.</td>
+                </tr>
+                <tr 
+                  v-for="(record, index) in lineSamplingData" 
+                  :key="index"
+                  class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                >
+                  <!-- Who -->
+                  <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                    <select
+                      v-if="editingLineIndex === index"
+                      v-model="editingLineData.who"
+                      class="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    >
+                      <option value="">Select sampler</option>
+                      <option v-for="sampler in samplerOptions" :key="sampler" :value="sampler">{{ sampler }}</option>
+                    </select>
+                    <span v-else class="block">{{ record.who || '-' }}</span>
+                  </td>
+                  
+                  <!-- Start Line Sampling -->
+                  <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    <div v-show="editingLineIndex === index">
+                      <flat-pickr
+                        :key="`start-line-${index}`"
+                        v-model="editingLineData.startLineSampling"
+                        :config="dateTimeConfig"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                      />
+                    </div>
+                    <span v-show="editingLineIndex !== index">{{ record.startLineSampling || '-' }}</span>
+                  </td>
+                  
+                  <!-- Finish Line Sampling -->
+                  <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    <div v-show="editingLineIndex === index">
+                      <flat-pickr
+                        :key="`finish-line-${index}`"
+                        v-model="editingLineData.finishLineSampling"
+                        :config="dateTimeConfig"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                      />
+                    </div>
+                    <span v-show="editingLineIndex !== index">{{ record.finishLineSampling || '-' }}</span>
+                  </td>
+                  
+                  <!-- Hours -->
+                  <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                    <span v-if="editingLineIndex === index">{{ calculateLineEditingHours }}</span>
+                    <span v-else>{{ record.hours || '-' }}</span>
+                  </td>
+                  
+                  <!-- ACTIONS -->
+                  <td class="whitespace-nowrap px-6 py-4 text-sm">
+                    <div v-if="editingLineIndex === index" class="flex items-center gap-2">
+                      <button
+                        @click="saveLineEdit(index)"
+                        class="rounded-lg p-1.5 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20 transition-all duration-200"
+                        title="Save"
+                      >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </button>
+                      <button
+                        @click="cancelLineSamplingEdit"
+                        class="rounded-lg p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-all duration-200"
+                        title="Cancel"
+                      >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <button
+                      v-else
+                      @click="startLineEdit(index)"
+                      class="rounded-lg p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 transition-all duration-200"
+                      title="Edit"
+                    >
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </ComponentCard>
     </div>
@@ -428,6 +554,9 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import ComponentCard from '@/components/common/ComponentCard.vue'
 import { getAllShipNominations, searchShipNominations, type ShipNomination } from '@/services/shipNominationService'
 import dropdownService from '@/services/dropdownService'
+import { autogenerateLineSampling } from '@/services/samplingRosterService'
+import { listMolekulisLoadings } from '@/services/molekulisLoadingService'
+import { listOtherJobs } from '@/services/otherJobsService'
 
 const toast = useToast()
 
@@ -515,6 +644,31 @@ const editingData = ref<{
   hours: ''
 })
 
+// Line Sampling Data Interface
+interface LineSamplingRecord {
+  who: string
+  startLineSampling: string // Display formatted
+  startLineSamplingRaw: string // ISO format for editing
+  finishLineSampling: string // Display formatted
+  finishLineSamplingRaw: string // ISO format for editing
+  hours: string
+}
+
+// Line Sampling Data
+const lineSamplingData = ref<LineSamplingRecord[]>([])
+const editingLineIndex = ref<number | null>(null)
+const editingLineData = ref<{
+  who: string
+  startLineSampling: string
+  finishLineSampling: string
+  hours: string
+}>({
+  who: '',
+  startLineSampling: '',
+  finishLineSampling: '',
+  hours: ''
+})
+
 // Sampler options for dropdown
 const samplerOptions = ref<string[]>([])
 
@@ -561,6 +715,31 @@ const calculateEditingHours = computed(() => {
 
   const startDate = new Date(editingData.value.startOffice)
   const finishDate = new Date(editingData.value.finishSampling)
+
+  if (isNaN(startDate.getTime()) || isNaN(finishDate.getTime())) {
+    return '-'
+  }
+
+  if (finishDate <= startDate) {
+    return '0.00 hrs'
+  }
+
+  const hours = calculateHours(startDate, finishDate)
+  return `${hours} hrs`
+})
+
+// Calculate hours in real-time during Line Sampling editing (reactive function)
+const calculateLineEditingHours = computed(() => {
+  if (editingLineIndex.value === null) {
+    return null
+  }
+
+  if (!editingLineData.value.startLineSampling || !editingLineData.value.finishLineSampling) {
+    return '-'
+  }
+
+  const startDate = new Date(editingLineData.value.startLineSampling)
+  const finishDate = new Date(editingLineData.value.finishLineSampling)
 
   if (isNaN(startDate.getTime()) || isNaN(finishDate.getTime())) {
     return '-'
@@ -686,6 +865,777 @@ const cancelOfficeSamplingEdit = () => {
     startOffice: '',
     finishSampling: '',
     hours: ''
+  }
+}
+
+// Start editing a Line Sampling record
+const startLineEdit = (index: number) => {
+  const record = lineSamplingData.value[index]
+  editingLineIndex.value = index
+  editingLineData.value = {
+    who: record.who,
+    startLineSampling: formatDateTimeForInput(record.startLineSamplingRaw),
+    finishLineSampling: formatDateTimeForInput(record.finishLineSamplingRaw),
+    hours: record.hours
+  }
+}
+
+// Calculate hours between two dates (returns number)
+const calculateHoursNumber = (startDate: Date, finishDate: Date): number => {
+  const diffMs = finishDate.getTime() - startDate.getTime()
+  return diffMs / (1000 * 60 * 60)
+}
+
+// Check if two shifts overlap
+const doShiftsOverlap = (start1: Date, end1: Date, start2: Date, end2: Date): boolean => {
+  return start1 < end2 && start2 < end1
+}
+
+// Validate that edited shift doesn't overlap with other shifts
+const validateShiftOverlap = (index: number, newStart: Date, newFinish: Date): boolean => {
+  for (let i = 0; i < lineSamplingData.value.length; i++) {
+    if (i === index) continue // Skip the current shift being edited
+    
+    const otherShift = lineSamplingData.value[i]
+    if (!otherShift.startLineSamplingRaw || !otherShift.finishLineSamplingRaw) continue
+    
+    const otherStart = new Date(otherShift.startLineSamplingRaw)
+    const otherFinish = new Date(otherShift.finishLineSamplingRaw)
+    
+    if (doShiftsOverlap(newStart, newFinish, otherStart, otherFinish)) {
+      return false
+    }
+  }
+  return true
+}
+
+// Calculate adjusted subsequent shifts without applying them (for validation)
+const calculateAdjustedSubsequentShifts = async (index: number, newFinishTime: Date): Promise<LineSamplingRecord[]> => {
+  if (index >= lineSamplingData.value.length - 1) {
+    return [] // No subsequent shifts to adjust
+  }
+  
+  // Get ETC (end of discharge period) for adjusting last shift
+  let etcDate: Date | null = null
+  if (formData.value.startDischarge && formData.value.dischargeTimeHours) {
+    let startDischargeISO: string
+    if (formData.value.startDischarge.includes('T') || formData.value.startDischarge.includes('Z')) {
+      startDischargeISO = formData.value.startDischarge
+    } else {
+      const startDate = new Date(formData.value.startDischarge.replace(' ', 'T'))
+      startDischargeISO = startDate.toISOString()
+    }
+    const startDischargeDate = new Date(startDischargeISO)
+    etcDate = new Date(startDischargeDate.getTime() + formData.value.dischargeTimeHours * 60 * 60 * 1000)
+  }
+  
+  let currentStart = new Date(newFinishTime)
+  const adjustedShifts: LineSamplingRecord[] = []
+  
+  // Calculate all subsequent shifts
+  for (let i = index + 1; i < lineSamplingData.value.length; i++) {
+    const currentShift = lineSamplingData.value[i]
+    
+    // Check if we've already reached ETC before starting this shift
+    if (etcDate && currentStart >= etcDate) {
+      break
+    }
+    
+    // Calculate new shift end (12 hours from start)
+    let newShiftEnd = new Date(currentStart.getTime() + 12 * 60 * 60 * 1000)
+    
+    // Check if end time would exceed ETC
+    if (etcDate && newShiftEnd > etcDate) {
+      newShiftEnd = etcDate
+    }
+    
+    const shiftHours = calculateHoursNumber(currentStart, newShiftEnd)
+    
+    adjustedShifts.push({
+      who: currentShift.who,
+      startLineSampling: formatDateTimeForTable(currentStart.toISOString()),
+      startLineSamplingRaw: currentStart.toISOString(),
+      finishLineSampling: formatDateTimeForTable(newShiftEnd.toISOString()),
+      finishLineSamplingRaw: newShiftEnd.toISOString(),
+      hours: `${shiftHours.toFixed(2)} hrs`
+    })
+    
+    // Move to next shift start
+    currentStart = new Date(newShiftEnd)
+    
+    // If we've reached ETC (shift ends exactly at ETC or beyond), stop adjusting
+    if (etcDate && newShiftEnd >= etcDate) {
+      break
+    }
+  }
+  
+  // After adjusting existing shifts, check if we need to add more shifts to reach ETC
+  if (etcDate && currentStart < etcDate) {
+    // Generate additional shifts until we reach ETC
+    // First, get the samplers list to assign them
+    const samplersResponse = await dropdownService.getSamplers(true)
+    const availableSamplers: string[] = samplersResponse.success && samplersResponse.data 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ? (samplersResponse.data as any[]).filter((s: any) => s.isActive).map((s: any) => s.name)
+      : []
+    
+    if (availableSamplers.length > 0) {
+      // Get used samplers from existing shifts (excluding the one being edited)
+      const usedSamplers: string[] = []
+      for (let i = 0; i <= index; i++) {
+        if (lineSamplingData.value[i].who) {
+          usedSamplers.push(lineSamplingData.value[i].who)
+        }
+      }
+      for (const shift of adjustedShifts) {
+        if (shift.who) {
+          usedSamplers.push(shift.who)
+        }
+      }
+      
+      // Rotate samplers for new shifts (start with least used)
+      const samplerUsage = new Map<string, number>()
+      availableSamplers.forEach((name: string) => {
+        samplerUsage.set(name, usedSamplers.filter(s => s === name).length)
+      })
+      
+      // Sort by usage (least used first)
+      const sortedSamplers = [...availableSamplers].sort((a, b) => {
+        return (samplerUsage.get(a) || 0) - (samplerUsage.get(b) || 0)
+      })
+      
+      let samplerIndex = 0
+      
+      // Generate shifts until ETC
+      while (currentStart < etcDate) {
+        // Calculate shift end (12 hours or until ETC)
+        let newShiftEnd = new Date(currentStart.getTime() + 12 * 60 * 60 * 1000)
+        if (newShiftEnd > etcDate) {
+          newShiftEnd = etcDate
+        }
+        
+        const shiftHours = calculateHoursNumber(currentStart, newShiftEnd)
+        
+        // Assign sampler (rotate through available samplers)
+        const assignedSampler = sortedSamplers[samplerIndex % sortedSamplers.length]
+        
+        adjustedShifts.push({
+          who: assignedSampler,
+          startLineSampling: formatDateTimeForTable(currentStart.toISOString()),
+          startLineSamplingRaw: currentStart.toISOString(),
+          finishLineSampling: formatDateTimeForTable(newShiftEnd.toISOString()),
+          finishLineSamplingRaw: newShiftEnd.toISOString(),
+          hours: `${shiftHours.toFixed(2)} hrs`
+        })
+        
+        // Update sampler usage
+        samplerUsage.set(assignedSampler, (samplerUsage.get(assignedSampler) || 0) + 1)
+        samplerIndex++
+        
+        // Move to next shift start
+        currentStart = new Date(newShiftEnd)
+        
+        // If we've reached ETC, stop
+        if (currentStart >= etcDate) {
+          break
+        }
+      }
+    }
+  }
+  
+  return adjustedShifts
+}
+
+// Get week range (Monday 00:00 to Sunday 23:59) for a given date
+const getWeekRange = (date: Date): { start: Date; end: Date } => {
+  const d = new Date(date)
+  const day = d.getDay()
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1) // Adjust to Monday
+  const monday = new Date(d.setDate(diff))
+  monday.setHours(0, 0, 0, 0)
+  
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+  sunday.setHours(23, 59, 59, 999)
+  
+  return { start: monday, end: sunday }
+}
+
+// Check if any part of a shift falls on a restricted day
+const hasRestrictedDay = (shiftStart: Date, shiftEnd: Date, restrictedDays: number[]): boolean => {
+  const start = new Date(shiftStart)
+  const end = new Date(shiftEnd)
+  
+  // Check each day the shift spans
+  const current = new Date(start)
+  current.setHours(0, 0, 0, 0)
+  const checkDate = new Date(current)
+  
+  while (checkDate <= end) {
+    const dayOfWeek = checkDate.getDay() // 0 = Sunday, 6 = Saturday
+    if (restrictedDays.includes(dayOfWeek)) {
+      return true
+    }
+    checkDate.setDate(checkDate.getDate() + 1)
+  }
+  
+  return false
+}
+
+// Validate shifts don't overlap (including calculated adjusted shifts)
+const validateShiftsAfterAdjustment = (
+  editedIndex: number,
+  newStart: Date,
+  newFinish: Date,
+  adjustedShifts: LineSamplingRecord[]
+): boolean => {
+  // Check edited shift against all other shifts (excluding subsequent ones that will be adjusted)
+  for (let i = 0; i < lineSamplingData.value.length; i++) {
+    if (i === editedIndex || i > editedIndex) continue // Skip edited shift and subsequent shifts (they'll be adjusted)
+    
+    const otherShift = lineSamplingData.value[i]
+    if (!otherShift.startLineSamplingRaw || !otherShift.finishLineSamplingRaw) continue
+    
+    const otherStart = new Date(otherShift.startLineSamplingRaw)
+    const otherFinish = new Date(otherShift.finishLineSamplingRaw)
+    
+    if (doShiftsOverlap(newStart, newFinish, otherStart, otherFinish)) {
+      return false
+    }
+  }
+  
+  // Check adjusted shifts against each other and against previous shifts
+  for (let i = 0; i < adjustedShifts.length; i++) {
+    const adjustedShift = adjustedShifts[i]
+    const adjStart = new Date(adjustedShift.startLineSamplingRaw)
+    const adjFinish = new Date(adjustedShift.finishLineSamplingRaw)
+    
+    // Check against edited shift
+    if (doShiftsOverlap(adjStart, adjFinish, newStart, newFinish)) {
+      return false
+    }
+    
+    // Check against other adjusted shifts
+    for (let j = i + 1; j < adjustedShifts.length; j++) {
+      const otherAdjShift = adjustedShifts[j]
+      const otherAdjStart = new Date(otherAdjShift.startLineSamplingRaw)
+      const otherAdjFinish = new Date(otherAdjShift.finishLineSamplingRaw)
+      
+      if (doShiftsOverlap(adjStart, adjFinish, otherAdjStart, otherAdjFinish)) {
+        return false
+      }
+    }
+    
+    // Check against previous shifts (before edited one)
+    for (let j = 0; j < editedIndex; j++) {
+      const prevShift = lineSamplingData.value[j]
+      if (!prevShift.startLineSamplingRaw || !prevShift.finishLineSamplingRaw) continue
+      
+      const prevStart = new Date(prevShift.startLineSamplingRaw)
+      const prevFinish = new Date(prevShift.finishLineSamplingRaw)
+      
+      if (doShiftsOverlap(adjStart, adjFinish, prevStart, prevFinish)) {
+        return false
+      }
+    }
+  }
+  
+  return true
+}
+
+// Validate sampler restrictions for manual edits (same rules as autogenerate)
+const validateSamplerRestrictions = async (
+  samplerName: string,
+  shiftStart: Date,
+  shiftEnd: Date,
+  excludeIndex?: number // Index of shift being edited to exclude from conflicts
+): Promise<{ valid: boolean; reason?: string }> => {
+  // Get sampler details
+  const samplersResponse = await dropdownService.getSamplers(true)
+  if (!samplersResponse.success || !samplersResponse.data) {
+    return { valid: false, reason: 'Failed to fetch sampler information' }
+  }
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sampler = samplersResponse.data.find((s: any) => s.name === samplerName) as any
+  if (!sampler) {
+    return { valid: false, reason: 'Sampler not found' }
+  }
+  
+  // Check if sampler is active
+  if (!sampler.isActive) {
+    return { valid: false, reason: 'Sampler is inactive' }
+  }
+  
+  // Check restricted days
+  if (hasRestrictedDay(shiftStart, shiftEnd, sampler.restrictedDays || [])) {
+    const restrictedDays = (sampler.restrictedDays || []).map((d: number) => {
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+      return days[d]
+    }).join(', ')
+    return { valid: false, reason: `Cannot work on restricted days: ${restrictedDays}` }
+  }
+  
+  // Check for consecutive shifts (same sampler without minimum rest)
+  const MIN_REST_HOURS = 10
+  for (let i = 0; i < lineSamplingData.value.length; i++) {
+    if (i === excludeIndex) continue // Skip the shift being edited
+    
+    const otherShift = lineSamplingData.value[i]
+    if (!otherShift.who || otherShift.who !== samplerName) continue
+    if (!otherShift.startLineSamplingRaw || !otherShift.finishLineSamplingRaw) continue
+    
+    const otherStart = new Date(otherShift.startLineSamplingRaw)
+    const otherFinish = new Date(otherShift.finishLineSamplingRaw)
+    
+    // Check if this shift comes before or after the edited shift
+    let restHours: number
+    
+    if (shiftStart >= otherFinish) {
+      // Edited shift starts after other shift ends
+      restHours = calculateHoursNumber(otherFinish, shiftStart)
+    } else if (otherStart >= shiftEnd) {
+      // Other shift starts after edited shift ends
+      restHours = calculateHoursNumber(shiftEnd, otherStart)
+    } else {
+      // Shifts overlap or are adjacent - this is already handled by overlap validation
+      continue
+    }
+    
+    // If shifts are consecutive (one ends exactly when the other starts or very close)
+    // and rest is less than minimum, it's invalid
+    if (restHours < MIN_REST_HOURS) {
+      return {
+        valid: false,
+        reason: `Insufficient rest between shifts: ${restHours.toFixed(1)}h (minimum ${MIN_REST_HOURS}h required). Cannot assign same sampler to consecutive shifts.`
+      }
+    }
+  }
+  
+  // Check weekly hours limit (if restricted)
+  const WEEKLY_MAX_HOURS_24 = 24
+  if (sampler.has24HourRestriction) {
+    const weekRange = getWeekRange(shiftStart)
+    
+    // Calculate weekly hours from all shifts (including this one)
+    let weeklyHours = calculateHoursNumber(shiftStart, shiftEnd)
+    
+    for (let i = 0; i < lineSamplingData.value.length; i++) {
+      if (i === excludeIndex) continue
+      
+      const otherShift = lineSamplingData.value[i]
+      if (!otherShift.who || otherShift.who !== samplerName) continue
+      if (!otherShift.startLineSamplingRaw || !otherShift.finishLineSamplingRaw) continue
+      
+      const otherStart = new Date(otherShift.startLineSamplingRaw)
+      const otherFinish = new Date(otherShift.finishLineSamplingRaw)
+      
+      // Only count hours within the same week
+      const shiftWeekRange = getWeekRange(otherStart)
+      if (shiftWeekRange.start.getTime() === weekRange.start.getTime()) {
+        const overlapStart = new Date(Math.max(otherStart.getTime(), weekRange.start.getTime()))
+        const overlapEnd = new Date(Math.min(otherFinish.getTime(), weekRange.end.getTime()))
+        if (overlapStart < overlapEnd) {
+          weeklyHours += calculateHoursNumber(overlapStart, overlapEnd)
+        }
+      }
+    }
+    
+    // Also check conflicts from other modules
+    try {
+      const weekStart = weekRange.start
+      const weekEnd = weekRange.end
+      
+      // Fetch Molekulis conflicts
+      const molekulisResponse = await listMolekulisLoadings({
+        limit: 1000,
+        sortBy: 'startAt',
+        sortOrder: 'asc'
+      })
+      
+      if (molekulisResponse.success && molekulisResponse.data) {
+        for (const item of molekulisResponse.data) {
+          if (item.who === samplerName) {
+            const itemStart = new Date(item.startAt)
+            const itemEnd = new Date(item.endAt)
+            
+            if (doShiftsOverlap(weekStart, weekEnd, itemStart, itemEnd)) {
+              const overlapStart = new Date(Math.max(itemStart.getTime(), weekStart.getTime()))
+              const overlapEnd = new Date(Math.min(itemEnd.getTime(), weekEnd.getTime()))
+              if (overlapStart < overlapEnd) {
+                weeklyHours += calculateHoursNumber(overlapStart, overlapEnd)
+              }
+            }
+          }
+        }
+      }
+      
+      // Fetch Other Jobs conflicts
+      const otherJobsResponse = await listOtherJobs({
+        limit: 1000,
+        sortBy: 'startAt',
+        sortOrder: 'asc'
+      })
+      
+      if (otherJobsResponse.success && otherJobsResponse.data) {
+        for (const item of otherJobsResponse.data) {
+          if (item.who === samplerName) {
+            const itemStart = new Date(item.startAt)
+            const itemEnd = new Date(item.endAt)
+            
+            if (doShiftsOverlap(weekStart, weekEnd, itemStart, itemEnd)) {
+              const overlapStart = new Date(Math.max(itemStart.getTime(), weekStart.getTime()))
+              const overlapEnd = new Date(Math.min(itemEnd.getTime(), weekEnd.getTime()))
+              if (overlapStart < overlapEnd) {
+                weeklyHours += calculateHoursNumber(overlapStart, overlapEnd)
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching conflicts for weekly hours validation:', error)
+    }
+    
+    if (weeklyHours > WEEKLY_MAX_HOURS_24) {
+      return {
+        valid: false,
+        reason: `Weekly limit exceeded: ${weeklyHours.toFixed(1)}h (max ${WEEKLY_MAX_HOURS_24}h)`
+      }
+    }
+  }
+  
+  // Check conflicts with other modules
+  try {
+    // Check Molekulis conflicts
+    const molekulisResponse = await listMolekulisLoadings({
+      limit: 1000,
+      sortBy: 'startAt',
+      sortOrder: 'asc'
+    })
+    
+    if (molekulisResponse.success && molekulisResponse.data) {
+      for (const item of molekulisResponse.data) {
+        if (item.who === samplerName) {
+          const itemStart = new Date(item.startAt)
+          const itemEnd = new Date(item.endAt)
+          
+          if (doShiftsOverlap(shiftStart, shiftEnd, itemStart, itemEnd)) {
+            return { valid: false, reason: 'Conflicts with Molekulis assignment' }
+          }
+        }
+      }
+    }
+    
+    // Check Other Jobs conflicts
+    const otherJobsResponse = await listOtherJobs({
+      limit: 1000,
+      sortBy: 'startAt',
+      sortOrder: 'asc'
+    })
+    
+    if (otherJobsResponse.success && otherJobsResponse.data) {
+      for (const item of otherJobsResponse.data) {
+        if (item.who === samplerName) {
+          const itemStart = new Date(item.startAt)
+          const itemEnd = new Date(item.endAt)
+          
+          if (doShiftsOverlap(shiftStart, shiftEnd, itemStart, itemEnd)) {
+            return { valid: false, reason: 'Conflicts with Other Jobs assignment' }
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error checking conflicts:', error)
+  }
+  
+  return { valid: true }
+}
+
+// Save edited Line Sampling record
+const saveLineEdit = async (index: number) => {
+  const currentRecord = lineSamplingData.value[index]
+  
+  // Use existing dates if not provided in editing data
+  let startDate: Date
+  let finishDate: Date
+  
+  if (editingLineData.value.startLineSampling) {
+    startDate = new Date(editingLineData.value.startLineSampling)
+    if (isNaN(startDate.getTime())) {
+      toast.warning('Invalid Start Line Sampling date format')
+      return
+    }
+  } else {
+    // Use existing date if not changed
+    startDate = new Date(currentRecord.startLineSamplingRaw)
+  }
+  
+  if (editingLineData.value.finishLineSampling) {
+    finishDate = new Date(editingLineData.value.finishLineSampling)
+    if (isNaN(finishDate.getTime())) {
+      toast.warning('Invalid Finish Line Sampling date format')
+      return
+    }
+  } else {
+    // Use existing date if not changed
+    finishDate = new Date(currentRecord.finishLineSamplingRaw)
+  }
+
+  // Validate dates
+  if (isNaN(startDate.getTime()) || isNaN(finishDate.getTime())) {
+    toast.warning('Please fill in Start Line Sampling and Finish Line Sampling')
+    return
+  }
+
+  if (finishDate <= startDate) {
+    toast.warning('Finish Line Sampling must be after Start Line Sampling')
+    return
+  }
+
+  // Calculate hours automatically
+  const hours = calculateHoursNumber(startDate, finishDate)
+
+  // Get sampler name (from editing data or current record)
+  const samplerName = editingLineData.value.who || currentRecord.who
+
+  // Validate sampler restrictions (same rules as autogenerate)
+  if (samplerName) {
+    const restrictionValidation = await validateSamplerRestrictions(
+      samplerName,
+      startDate,
+      finishDate,
+      index
+    )
+    
+    if (!restrictionValidation.valid) {
+      toast.error(restrictionValidation.reason || 'Sampler validation failed')
+      return
+    }
+  }
+
+  // Check if finish time was manually changed
+  const originalFinishTime = new Date(currentRecord.finishLineSamplingRaw)
+  const finishTimeChanged = finishDate.getTime() !== originalFinishTime.getTime()
+
+  // Calculate adjusted subsequent shifts if finish time changed
+  let adjustedShifts: LineSamplingRecord[] = []
+  if (finishTimeChanged) {
+    adjustedShifts = await calculateAdjustedSubsequentShifts(index, finishDate)
+    
+    // Validate no overlap after adjustment
+    if (!validateShiftsAfterAdjustment(index, startDate, finishDate, adjustedShifts)) {
+      toast.error('This shift overlaps with another shift after adjustment. Please adjust the times.')
+      return
+    }
+    
+    // Validate sampler restrictions for adjusted shifts
+    for (let i = 0; i < adjustedShifts.length; i++) {
+      const adjustedShift = adjustedShifts[i]
+      if (adjustedShift.who) {
+        const adjStart = new Date(adjustedShift.startLineSamplingRaw)
+        const adjEnd = new Date(adjustedShift.finishLineSamplingRaw)
+        
+        const adjValidation = await validateSamplerRestrictions(
+          adjustedShift.who,
+          adjStart,
+          adjEnd,
+          index + 1 + i // This shift will be at this index after adjustment
+        )
+        
+        if (!adjValidation.valid) {
+          toast.error(`Shift ${index + 2 + i}: ${adjValidation.reason}`)
+          return
+        }
+      }
+    }
+  } else {
+    // If finish time didn't change, validate normally
+    if (!validateShiftOverlap(index, startDate, finishDate)) {
+      toast.error('This shift overlaps with another shift. Please adjust the times.')
+      return
+    }
+  }
+
+  // Update the record
+  lineSamplingData.value[index] = {
+    who: editingLineData.value.who || currentRecord.who,
+    startLineSampling: formatDateTimeForTable(startDate.toISOString()),
+    startLineSamplingRaw: startDate.toISOString(),
+    finishLineSampling: formatDateTimeForTable(finishDate.toISOString()),
+    finishLineSamplingRaw: finishDate.toISOString(),
+    hours: `${hours.toFixed(2)} hrs`
+  }
+
+  // If finish time was manually changed, apply adjusted shifts
+  if (finishTimeChanged && adjustedShifts.length > 0) {
+    // Count how many existing shifts were adjusted vs new shifts added
+    const existingShiftsCount = Math.min(adjustedShifts.length, lineSamplingData.value.length - index - 1)
+    const newShiftsCount = Math.max(0, adjustedShifts.length - existingShiftsCount)
+    
+    // Apply adjusted shifts (replace existing ones)
+    for (let i = 0; i < existingShiftsCount; i++) {
+      const shiftIndex = index + 1 + i
+      if (shiftIndex < lineSamplingData.value.length) {
+        lineSamplingData.value[shiftIndex] = adjustedShifts[i]
+      }
+    }
+    
+    // Add new shifts if there are any
+    if (newShiftsCount > 0) {
+      const newShifts = adjustedShifts.slice(existingShiftsCount)
+      for (const newShift of newShifts) {
+        lineSamplingData.value.push(newShift)
+      }
+    }
+    
+    // Remove any remaining shifts that come after the adjusted shifts
+    const firstShiftToRemove = index + 1 + adjustedShifts.length
+    if (firstShiftToRemove < lineSamplingData.value.length) {
+      const removedCount = lineSamplingData.value.length - firstShiftToRemove
+      lineSamplingData.value.splice(firstShiftToRemove)
+      
+      if (newShiftsCount > 0 && removedCount > 0) {
+        toast.success(`Line Sampling record updated, ${existingShiftsCount} shift(s) adjusted, ${newShiftsCount} shift(s) added, and ${removedCount} shift(s) removed`)
+      } else if (newShiftsCount > 0) {
+        toast.success(`Line Sampling record updated, ${existingShiftsCount} shift(s) adjusted, and ${newShiftsCount} shift(s) added to reach ETC`)
+      } else if (removedCount > 0) {
+        toast.success(`Line Sampling record updated, ${existingShiftsCount} shift(s) adjusted, and ${removedCount} shift(s) removed (ETC reached)`)
+      } else {
+        toast.success('Line Sampling record updated and subsequent shifts adjusted')
+      }
+    } else if (newShiftsCount > 0) {
+      toast.success(`Line Sampling record updated, ${existingShiftsCount} shift(s) adjusted, and ${newShiftsCount} shift(s) added to reach ETC`)
+    } else {
+      toast.success('Line Sampling record updated and subsequent shifts adjusted')
+    }
+  } else {
+    toast.success('Line Sampling record updated successfully')
+  }
+
+  // Exit edit mode
+  editingLineIndex.value = null
+  editingLineData.value = {
+    who: '',
+    startLineSampling: '',
+    finishLineSampling: '',
+    hours: ''
+  }
+}
+
+// Cancel editing Line Sampling
+const cancelLineSamplingEdit = () => {
+  editingLineIndex.value = null
+  editingLineData.value = {
+    who: '',
+    startLineSampling: '',
+    finishLineSampling: '',
+    hours: ''
+  }
+}
+
+// Auto generate state
+const isGenerating = ref(false)
+
+// Handle auto generate
+const handleAutoGenerate = async () => {
+  if (!formData.value.startDischarge || formData.value.dischargeTimeHours === null || formData.value.dischargeTimeHours === undefined) {
+    toast.warning('Please fill in Start Discharge and Discharge Time (Hrs)')
+    return
+  }
+
+  isGenerating.value = true
+
+  try {
+    // Get Office Sampling data if available
+    const officeSamplingRecord = officeSamplingData.value.length > 0 
+      ? officeSamplingData.value[0] 
+      : undefined
+    
+    const officeSamplingFinish = officeSamplingRecord?.finishSamplingRaw
+    const officeSamplingSampler = officeSamplingRecord?.who
+    const officeSamplingStart = officeSamplingRecord?.startOfficeRaw
+
+    // Convert startDischarge from flatpickr format (Y-m-d H:i) to ISO string
+    // If it's already in ISO format, use as is, otherwise parse it
+    let startDischargeISO: string
+    if (formData.value.startDischarge.includes('T') || formData.value.startDischarge.includes('Z')) {
+      startDischargeISO = formData.value.startDischarge
+    } else {
+      // Parse 'Y-m-d H:i' format
+      const startDate = new Date(formData.value.startDischarge.replace(' ', 'T'))
+      startDischargeISO = startDate.toISOString()
+    }
+
+    // Call autogenerate service
+    const result = await autogenerateLineSampling(
+      startDischargeISO,
+      formData.value.dischargeTimeHours,
+      officeSamplingFinish,
+      lineSamplingData.value.length > 0 ? lineSamplingData.value : undefined,
+      officeSamplingSampler,
+      officeSamplingStart
+    )
+
+    if (result.success && result.data) {
+      lineSamplingData.value = result.data
+      
+      // Show warnings if any
+      if (result.warnings && result.warnings.length > 0) {
+        toast.warning(`${result.warnings.length} warning(s): ${result.warnings[0]}`)
+      }
+      
+      // Log audit log to console
+      if (result.auditLog) {
+        console.log('=== Autogenerate Audit Log ===')
+        result.auditLog.forEach(log => console.log(log))
+        console.log('=== End Audit Log ===')
+      }
+      
+      toast.success(`Generated ${result.data.length} shift(s)`)
+    } else {
+      // Show errors
+      const errorMessage = result.errors && result.errors.length > 0
+        ? result.errors[0]
+        : 'Failed to generate shifts'
+      
+      toast.error(errorMessage)
+      
+      // Still populate shifts without samplers if data exists
+      if (result.data) {
+        lineSamplingData.value = result.data
+        toast.warning('Some shifts could not be assigned to samplers. Please assign manually.')
+      }
+      
+      // Log audit log to console
+      if (result.auditLog) {
+        console.error('=== Autogenerate Audit Log (Errors) ===')
+        result.auditLog.forEach(log => console.error(log))
+        console.error('=== End Audit Log ===')
+      }
+    }
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Auto generate error:', error)
+    toast.error(`Auto generate failed: ${errorMessage}`)
+  } finally {
+    isGenerating.value = false
+  }
+}
+
+// Clear Line Sampling data
+const clearLineSampling = () => {
+  if (confirm('Are you sure you want to clear all Line Sampling shifts?')) {
+    lineSamplingData.value = []
+    editingLineIndex.value = null
+    editingLineData.value = {
+      who: '',
+      startLineSampling: '',
+      finishLineSampling: '',
+      hours: ''
+    }
+    toast.success('Line Sampling data cleared')
   }
 }
 
