@@ -7,6 +7,7 @@ export const getAllShipNominations = async (req, res) => {
   try {
     // Update all statuses based on current date before fetching
     await ShipNomination.updateAllStatuses();
+    
     // Pagination params
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
@@ -24,8 +25,20 @@ export const getAllShipNominations = async (req, res) => {
       sort.createdAt = sortOrder;
     }
 
-    const total = await ShipNomination.countDocuments();
-    const nominations = await ShipNomination.find()
+    // Search filter
+    const searchQuery = req.query.search;
+    const query = {};
+    
+    if (searchQuery && searchQuery.trim() !== '') {
+      const searchRegex = new RegExp(searchQuery.trim(), 'i'); // Case-insensitive search
+      query.$or = [
+        { vesselName: searchRegex },
+        { amspecReference: searchRegex }
+      ];
+    }
+
+    const total = await ShipNomination.countDocuments(query);
+    const nominations = await ShipNomination.find(query)
       .sort(sort)
       .skip(skip)
       .limit(limit);

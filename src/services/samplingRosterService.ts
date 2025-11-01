@@ -3,6 +3,56 @@ import { listMolekulisLoadings, type MolekulisLoading } from './molekulisLoading
 import { listOtherJobs, type OtherJob } from './otherJobsService'
 import dropdownService from './dropdownService'
 
+// Types for Sampling Roster persistence
+export interface OfficeSamplingRecordDB {
+  who: string
+  startOffice: string // ISO string
+  finishSampling: string // ISO string
+  hours: number
+}
+
+export interface LineSamplingRecordDB {
+  who: string
+  startLineSampling: string // ISO string
+  finishLineSampling: string // ISO string
+  hours: number
+}
+
+export interface SamplingRosterData {
+  amspecRef: string
+  vessel: string
+  berth: string
+  pob: string // ISO string
+  etb: string // ISO string
+  startDischarge: string // ISO string
+  dischargeTimeHours: number
+  cargo: string
+  surveyor: string
+  preDischargeTest?: string
+  postDischargeTest?: string
+  officeSampling: OfficeSamplingRecordDB[]
+  lineSampling: LineSamplingRecordDB[]
+}
+
+export interface SamplingRoster extends SamplingRosterData {
+  _id: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ApiResponse<T> {
+  success: boolean
+  data?: T
+  message?: string
+  error?: string
+  errors?: string[]
+  count?: number
+  total?: number
+  page?: number
+  pages?: number
+  limit?: number
+}
+
 // Types
 export interface Sampler {
   _id: string
@@ -881,5 +931,33 @@ export async function autogenerateLineSampling(
       auditLog
     }
   }
+}
+
+// Get sampling roster by AmSpec reference
+export const getSamplingRosterByRef = async (amspecRef: string): Promise<ApiResponse<SamplingRoster>> => {
+  const encoded = encodeURIComponent(amspecRef)
+  const response = await api.get(`/sampling-rosters/ref/${encoded}`)
+  return response.data
+}
+
+// Create new sampling roster
+export const createSamplingRoster = async (data: SamplingRosterData): Promise<ApiResponse<SamplingRoster>> => {
+  const response = await api.post('/sampling-rosters', data)
+  return response.data
+}
+
+// Update sampling roster
+export const updateSamplingRoster = async (
+  id: string,
+  data: Partial<SamplingRosterData>
+): Promise<ApiResponse<SamplingRoster>> => {
+  const response = await api.put(`/sampling-rosters/${id}`, data)
+  return response.data
+}
+
+// Get sampling roster by ID
+export const getSamplingRosterById = async (id: string): Promise<ApiResponse<SamplingRoster>> => {
+  const response = await api.get(`/sampling-rosters/${id}`)
+  return response.data
 }
 

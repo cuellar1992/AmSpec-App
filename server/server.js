@@ -7,6 +7,7 @@ import shipNominationRoutes from './routes/shipNominations.js';
 import molekulisLoadingRoutes from './routes/molekulisLoading.js';
 import otherJobsRoutes from './routes/otherJobs.js';
 import dropdownRoutes from './routes/dropdowns.js';
+import samplingRosterRoutes from './routes/samplingRosters.js';
 import ShipNomination from './models/ShipNomination.js';
 
 // Load environment variables
@@ -53,6 +54,7 @@ app.get('/', (req, res) => {
       clients: '/api/dropdowns/clients',
       productTypes: '/api/dropdowns/product-types',
       otherJobs: '/api/other-jobs',
+      samplingRosters: '/api/sampling-rosters',
     },
   });
 });
@@ -61,6 +63,7 @@ app.use('/api/ship-nominations', shipNominationRoutes);
 app.use('/api/molekulis-loading', molekulisLoadingRoutes);
 app.use('/api/other-jobs', otherJobsRoutes);
 app.use('/api/dropdowns', dropdownRoutes);
+app.use('/api/sampling-rosters', samplingRosterRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

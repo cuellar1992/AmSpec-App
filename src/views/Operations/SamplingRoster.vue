@@ -277,10 +277,10 @@
                 <button
                   type="button"
                   @click="handleSubmit"
-                  :disabled="isSubmitting"
+                  :disabled="isSubmitting || !hasLineSamplingGenerated"
                   class="rounded-lg bg-brand-500 px-6 py-2.5 text-white font-medium hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {{ isEditing ? 'Update' : 'Save' }}
+                  {{ isEditing && hasUnsavedChanges ? 'Update' : isEditing ? 'Saved' : 'Save' }}
                 </button>
                 <button
                   v-if="isEditing"
@@ -545,7 +545,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import flatPickr from 'vue-flatpickr-component'
 import 'flatpickr/dist/flatpickr.css'
 import { useToast } from 'vue-toastification'
@@ -554,7 +554,7 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import ComponentCard from '@/components/common/ComponentCard.vue'
 import { getAllShipNominations, searchShipNominations, type ShipNomination } from '@/services/shipNominationService'
 import dropdownService from '@/services/dropdownService'
-import { autogenerateLineSampling } from '@/services/samplingRosterService'
+import { autogenerateLineSampling, getSamplingRosterByRef, createSamplingRoster, updateSamplingRoster, type SamplingRosterData as SamplingRosterDataService } from '@/services/samplingRosterService'
 import { listMolekulisLoadings } from '@/services/molekulisLoadingService'
 import { listOtherJobs } from '@/services/otherJobsService'
 
@@ -792,7 +792,7 @@ const startEdit = (index: number) => {
 }
 
 // Save edited record
-const saveEdit = (index: number) => {
+const saveEdit = async (index: number) => {
   const currentRecord = officeSamplingData.value[index]
   
   // Use existing dates if not provided in editing data
@@ -852,6 +852,11 @@ const saveEdit = (index: number) => {
     startOffice: '',
     finishSampling: '',
     hours: ''
+  }
+  
+  // Auto-save after editing (only officeSampling field will be sent)
+  if (hasLineSamplingGenerated.value) {
+    await autoSave()
   }
   
   toast.success('Record updated successfully')
@@ -1522,6 +1527,11 @@ const saveLineEdit = async (index: number) => {
     finishLineSampling: '',
     hours: ''
   }
+  
+  // Auto-save after editing (only lineSampling field will be sent)
+  if (hasLineSamplingGenerated.value) {
+    await autoSave()
+  }
 }
 
 // Cancel editing Line Sampling
@@ -1594,6 +1604,10 @@ const handleAutoGenerate = async () => {
       }
       
       toast.success(`Generated ${result.data.length} shift(s)`)
+      hasLineSamplingGenerated.value = true
+      
+      // Auto-save after generating Line Sampling (only lineSampling field will be sent)
+      await autoSave()
     } else {
       // Show errors
       const errorMessage = result.errors && result.errors.length > 0
@@ -1635,12 +1649,127 @@ const clearLineSampling = () => {
       finishLineSampling: '',
       hours: ''
     }
+    hasLineSamplingGenerated.value = false
+    
+    // Auto-save after clearing (only lineSampling field will be sent)
+    if (isEditing.value && editingId.value) {
+      autoSave()
+    }
+    
     toast.success('Line Sampling data cleared')
   }
 }
 
+// Load sampling roster from MongoDB
+const loadSamplingRoster = async (amspecRef: string) => {
+  try {
+    const response = await getSamplingRosterByRef(amspecRef)
+    if (response.success && response.data) {
+      const roster = response.data
+      
+      // Fill form with saved data
+      formData.value.vessel = roster.vessel
+      formData.value.berth = roster.berth
+      formData.value.amspecRef = roster.amspecRef
+      formData.value.pob = roster.pob
+      formData.value.etb = roster.etb
+      
+      // Convert startDischarge from ISO to flatpickr format
+      if (roster.startDischarge) {
+        const startDischargeDate = new Date(roster.startDischarge)
+        const year = startDischargeDate.getFullYear()
+        const month = String(startDischargeDate.getMonth() + 1).padStart(2, '0')
+        const day = String(startDischargeDate.getDate()).padStart(2, '0')
+        const hours = String(startDischargeDate.getHours()).padStart(2, '0')
+        const minutes = String(startDischargeDate.getMinutes()).padStart(2, '0')
+        formData.value.startDischarge = `${year}-${month}-${day} ${hours}:${minutes}`
+      }
+      
+      formData.value.dischargeTimeHours = roster.dischargeTimeHours
+      formData.value.cargo = roster.cargo
+      formData.value.surveyor = roster.surveyor
+      formData.value.preDischargeTest = roster.preDischargeTest || ''
+      formData.value.postDischargeTest = roster.postDischargeTest || ''
+      
+      // Load Office Sampling data - clear first, then load if exists
+      officeSamplingData.value = []
+      if (roster.officeSampling && roster.officeSampling.length > 0) {
+        officeSamplingData.value = roster.officeSampling.map(record => ({
+          who: record.who,
+          startOffice: formatDateTimeForTable(record.startOffice),
+          startOfficeRaw: record.startOffice,
+          finishSampling: formatDateTimeForTable(record.finishSampling),
+          finishSamplingRaw: record.finishSampling,
+          hours: `${record.hours.toFixed(2)} hrs`
+        }))
+      }
+      
+      // Load Line Sampling data - clear first, then load if exists
+      lineSamplingData.value = []
+      hasLineSamplingGenerated.value = false
+      if (roster.lineSampling && roster.lineSampling.length > 0) {
+        lineSamplingData.value = roster.lineSampling.map(record => ({
+          who: record.who,
+          startLineSampling: formatDateTimeForTable(record.startLineSampling),
+          startLineSamplingRaw: record.startLineSampling,
+          finishLineSampling: formatDateTimeForTable(record.finishLineSampling),
+          finishLineSamplingRaw: record.finishLineSampling,
+          hours: `${record.hours.toFixed(2)} hrs`
+        }))
+        hasLineSamplingGenerated.value = true
+      }
+      
+      // Set editing state
+      isEditing.value = true
+      editingId.value = roster._id
+      
+      // Store original data for change detection
+      originalData.value = {
+        amspecRef: roster.amspecRef,
+        vessel: roster.vessel,
+        berth: roster.berth,
+        pob: roster.pob,
+        etb: roster.etb,
+        startDischarge: roster.startDischarge,
+        dischargeTimeHours: roster.dischargeTimeHours,
+        cargo: roster.cargo,
+        surveyor: roster.surveyor,
+        preDischargeTest: roster.preDischargeTest || '',
+        postDischargeTest: roster.postDischargeTest || '',
+        officeSampling: roster.officeSampling.map(r => ({
+          who: r.who,
+          startOffice: r.startOffice,
+          finishSampling: r.finishSampling,
+          hours: r.hours
+        })),
+        lineSampling: roster.lineSampling.map(r => ({
+          who: r.who,
+          startLineSampling: r.startLineSampling,
+          finishLineSampling: r.finishLineSampling,
+          hours: r.hours
+        }))
+      }
+      
+      hasUnsavedChanges.value = false
+      
+      toast.success('Sampling roster loaded from database')
+      return true
+    }
+    // No data found - return false but don't clear here (will be cleared in selectShipNomination)
+    return false
+  } catch (error) {
+    console.error('Error loading sampling roster:', error)
+    return false
+  }
+}
+
 // Select ship nomination and fill form
-const selectShipNomination = (ship: ShipNomination) => {
+const selectShipNomination = async (ship: ShipNomination) => {
+  // Clear previous data first to avoid showing stale data
+  officeSamplingData.value = []
+  lineSamplingData.value = []
+  hasLineSamplingGenerated.value = false
+  
   // Fill form with ship nomination data
   formData.value.vessel = ship.vesselName
   formData.value.berth = ship.berth || ''
@@ -1672,14 +1801,24 @@ const selectShipNomination = (ship: ShipNomination) => {
   formData.value.preDischargeTest = ship.chemist || ''
   formData.value.postDischargeTest = ship.chemist || ''
 
-  // Populate Office Sampling table
-  populateOfficeSamplingTable(ship)
-
   // Close dropdown and clear search
   showDropdown.value = false
   searchQuery.value = `${ship.vesselName} - ${ship.amspecReference}`
 
-  toast.success('Form filled with ship nomination data')
+  // Try to load existing sampling roster from MongoDB
+  const loaded = await loadSamplingRoster(ship.amspecReference)
+  if (!loaded) {
+    // No existing data found - populate Office Sampling from ship nomination
+    populateOfficeSamplingTable(ship)
+    
+    // Reset editing state
+    isEditing.value = false
+    editingId.value = ''
+    originalData.value = null
+    hasUnsavedChanges.value = false
+    toast.success('Form filled with ship nomination data')
+  }
+  // If loaded is true, loadSamplingRoster already populated Office Sampling from database
 }
 
 // Status badge class
@@ -1797,6 +1936,9 @@ const isSubmitting = ref(false)
 const isEditing = ref(false)
 const editingId = ref<string>('')
 const submittedOnce = ref(false)
+const hasLineSamplingGenerated = ref(false)
+const hasUnsavedChanges = ref(false)
+const originalData = ref<SamplingRosterDataService | null>(null)
 
 const validateForm = () => {
   submittedOnce.value = true
@@ -1818,6 +1960,154 @@ const validateForm = () => {
   return true
 }
 
+// Prepare data for saving
+const prepareDataForSave = (): SamplingRosterDataService => {
+  // Convert startDischarge to ISO format
+  let startDischargeISO: string
+  if (formData.value.startDischarge.includes('T') || formData.value.startDischarge.includes('Z')) {
+    startDischargeISO = formData.value.startDischarge
+  } else {
+    const startDate = new Date(formData.value.startDischarge.replace(' ', 'T'))
+    startDischargeISO = startDate.toISOString()
+  }
+
+  // Convert Office Sampling data
+  const officeSampling = officeSamplingData.value.map(record => ({
+    who: record.who,
+    startOffice: record.startOfficeRaw,
+    finishSampling: record.finishSamplingRaw,
+    hours: parseFloat(record.hours.replace(' hrs', '')) || 0
+  }))
+
+  // Convert Line Sampling data
+  const lineSampling = lineSamplingData.value.map(record => ({
+    who: record.who,
+    startLineSampling: record.startLineSamplingRaw,
+    finishLineSampling: record.finishLineSamplingRaw,
+    hours: parseFloat(record.hours.replace(' hrs', '')) || 0
+  }))
+
+  return {
+    amspecRef: formData.value.amspecRef,
+    vessel: formData.value.vessel,
+    berth: formData.value.berth,
+    pob: formData.value.pob,
+    etb: formData.value.etb,
+    startDischarge: startDischargeISO,
+    dischargeTimeHours: formData.value.dischargeTimeHours || 0,
+    cargo: formData.value.cargo,
+    surveyor: formData.value.surveyor,
+    preDischargeTest: formData.value.preDischargeTest,
+    postDischargeTest: formData.value.postDischargeTest,
+    officeSampling,
+    lineSampling
+  }
+}
+
+// Compare two objects and return only changed fields
+const getChangedFields = (
+  current: SamplingRosterDataService,
+  original: SamplingRosterDataService
+): Partial<SamplingRosterDataService> => {
+  const changes: Partial<SamplingRosterDataService> = {}
+
+  // Compare form fields
+  if (current.amspecRef !== original.amspecRef) changes.amspecRef = current.amspecRef
+  if (current.vessel !== original.vessel) changes.vessel = current.vessel
+  if (current.berth !== original.berth) changes.berth = current.berth
+  if (current.pob !== original.pob) changes.pob = current.pob
+  if (current.etb !== original.etb) changes.etb = current.etb
+  if (current.startDischarge !== original.startDischarge) changes.startDischarge = current.startDischarge
+  if (current.dischargeTimeHours !== original.dischargeTimeHours) changes.dischargeTimeHours = current.dischargeTimeHours
+  if (current.cargo !== original.cargo) changes.cargo = current.cargo
+  if (current.surveyor !== original.surveyor) changes.surveyor = current.surveyor
+  if (current.preDischargeTest !== original.preDischargeTest) changes.preDischargeTest = current.preDischargeTest
+  if (current.postDischargeTest !== original.postDischargeTest) changes.postDischargeTest = current.postDischargeTest
+
+  // Compare Office Sampling arrays
+  const officeSamplingChanged = JSON.stringify(current.officeSampling) !== JSON.stringify(original.officeSampling)
+  if (officeSamplingChanged) {
+    changes.officeSampling = current.officeSampling
+  }
+
+  // Compare Line Sampling arrays
+  const lineSamplingChanged = JSON.stringify(current.lineSampling) !== JSON.stringify(original.lineSampling)
+  if (lineSamplingChanged) {
+    changes.lineSampling = current.lineSampling
+  }
+
+  return changes
+}
+
+// Auto-save function (incremental - only saves changed fields)
+const autoSave = async () => {
+  if (!hasLineSamplingGenerated.value || !formData.value.amspecRef) {
+    return
+  }
+
+  if (!validateForm()) {
+    return
+  }
+
+  try {
+    const currentData = prepareDataForSave()
+    
+    if (isEditing.value && editingId.value && originalData.value) {
+      // Get only changed fields for incremental update
+      const changes = getChangedFields(currentData, originalData.value)
+      
+      // Only update if there are actual changes
+      if (Object.keys(changes).length === 0) {
+        return // No changes, skip auto-save
+      }
+      
+      await updateSamplingRoster(editingId.value, changes)
+      
+      // Update originalData with current data after successful save
+      originalData.value = currentData
+      
+      // Silent auto-save - no toast notification to avoid annoying the user
+    } else {
+      // First save - create new record
+      const response = await createSamplingRoster(currentData)
+      if (response.success && response.data) {
+        isEditing.value = true
+        editingId.value = response.data._id
+        originalData.value = currentData
+        // Silent auto-save - no toast notification
+      }
+    }
+    
+    hasUnsavedChanges.value = false
+  } catch (error) {
+    console.error('Auto-save error:', error)
+    // Don't show error toast for auto-save to avoid annoying the user
+  }
+}
+
+// Check for changes
+const checkForChanges = () => {
+  if (!originalData.value || !isEditing.value) {
+    hasUnsavedChanges.value = false
+    return
+  }
+
+  const currentData = prepareDataForSave()
+  
+  // Simple comparison - check if data has changed
+  const originalStr = JSON.stringify(originalData.value)
+  const currentStr = JSON.stringify(currentData)
+  
+  hasUnsavedChanges.value = originalStr !== currentStr
+}
+
+// Watch for changes in form data
+watch([formData, officeSamplingData, lineSamplingData], () => {
+  if (isEditing.value) {
+    checkForChanges()
+  }
+}, { deep: true })
+
 const handleSubmit = async () => {
   if (isSubmitting.value) return
   isSubmitting.value = true
@@ -1827,13 +2117,39 @@ const handleSubmit = async () => {
     return
   }
 
+  if (!hasLineSamplingGenerated.value) {
+    toast.warning('Please generate Line Sampling first')
+    isSubmitting.value = false
+    return
+  }
+
   try {
-    // TODO: Call API service to save/update
-    toast.success(isEditing.value ? 'Entry updated successfully' : 'Entry created successfully')
-    resetForm()
-    // TODO: Reload items
-  } catch {
-    toast.error('Failed to save entry')
+    const dataToSave = prepareDataForSave()
+    
+    if (isEditing.value && editingId.value) {
+      const response = await updateSamplingRoster(editingId.value, dataToSave as Partial<SamplingRosterDataService>)
+      if (response.success && response.data) {
+        originalData.value = dataToSave
+        hasUnsavedChanges.value = false
+        toast.success('Sampling roster updated successfully')
+      } else {
+        toast.error(response.message || 'Failed to update sampling roster')
+      }
+    } else {
+      const response = await createSamplingRoster(dataToSave)
+      if (response.success && response.data) {
+        isEditing.value = true
+        editingId.value = response.data._id
+        originalData.value = dataToSave
+        hasUnsavedChanges.value = false
+        toast.success('Sampling roster saved successfully')
+      } else {
+        toast.error(response.message || 'Failed to save sampling roster')
+      }
+    }
+  } catch (error) {
+    console.error('Save error:', error)
+    toast.error('Failed to save sampling roster')
   } finally {
     isSubmitting.value = false
   }
@@ -1853,10 +2169,15 @@ const resetForm = () => {
     preDischargeTest: '',
     postDischargeTest: ''
   }
+  officeSamplingData.value = []
+  lineSamplingData.value = []
   submittedOnce.value = false
   isEditing.value = false
   editingId.value = ''
   searchQuery.value = ''
+  hasLineSamplingGenerated.value = false
+  hasUnsavedChanges.value = false
+  originalData.value = null
 }
 
 const cancelEdit = () => {
